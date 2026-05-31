@@ -5,6 +5,13 @@ import type { Room } from "colyseus.js";
 export interface ClientGameModule {
   descriptor: GameDescriptor;
   Component: ComponentType<{ room: Room }>;
+  /**
+   * Optional. Called once as soon as the room becomes available, before the
+   * game's UI mounts. Use this to register private-message handlers (e.g.
+   * role / hand deliveries) so messages the server sends at game start
+   * aren't dropped before the GameView component is rendered.
+   */
+  setupRoomHandlers?: (room: Room) => void;
 }
 
 const games = new Map<string, ClientGameModule>();

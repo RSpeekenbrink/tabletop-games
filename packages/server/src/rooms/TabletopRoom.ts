@@ -12,7 +12,7 @@ import { getGame } from "../games/registry.js";
 import type { GameInstance } from "../games/GameInstance.js";
 
 const RECONNECT_SECONDS = 60;
-const SHORTCODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // omit ambiguous chars
+const SHORTCODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const SHORTCODE_LENGTH = 4;
 
 function generateShortcode(): string {
@@ -58,24 +58,26 @@ export class TabletopRoom extends Room<LobbyState> {
 
       this.game?.dispose();
       this.game = module.create(this);
-      this.state.phase = "in-game";
+      // game.onStart() swaps this.state to its own schema and sets phase.
       void this.game.onStart();
     });
 
     this.onMessage(MSG.RESTART_GAME, (client) => {
       if (!this.isHost(client)) return;
+      if (this.state.phase !== "post-game") return;
       const module = getGame(this.state.selectedGameId);
       if (!module) return;
       this.game?.dispose();
       this.game = module.create(this);
-      this.state.phase = "in-game";
       void this.game.onStart();
     });
 
     this.onMessage(MSG.RETURN_TO_LOBBY, (client) => {
       if (!this.isHost(client)) return;
+      if (this.state.phase === "lobby") return;
       this.game?.dispose();
       this.game = null;
+      this.state.secretHitler = undefined;
       this.state.phase = "lobby";
     });
 
@@ -91,13 +93,17 @@ export class TabletopRoom extends Room<LobbyState> {
     });
 
     this.onMessage(MSG.GAME_ACTION, (client, payload: GameActionPayload) => {
-      if (!this.game || this.state.phase !== "in-game") return;
+      if (!this.game) return;
+      if (this.state.phase !== "in-game" && this.state.phase !== "post-game") return;
       if (!payload?.type) return;
       this.game.onMessage(client, payload.type, payload.data);
     });
   }
 
   override onJoin(client: Client, options: JoinOptions = {}): void {
+    if (this.state.phase === "in-game") {
+      throw new Error("Game in progress — wait for the round to end.");
+    }
     const username = (options.username ?? "").toString().slice(0, 32).trim() || "Anon";
     const player = new PlayerSchema();
     player.sessionId = client.sessionId;
@@ -115,7 +121,13 @@ export class TabletopRoom extends Room<LobbyState> {
     if (player) player.connected = false;
 
     if (consented) {
-      this.removePlayer(client.sessionId);
+      if (this.game && this.state.phase === "in-game") {
+        // Mid-game voluntary leave is an elimination — let the game record it
+        // but keep the seat visible (don't remove from the players map).
+        this.game.onPlayerLeave(client, true);
+      } else {
+        this.removePlayer(client.sessionId);
+      }
       return;
     }
 
@@ -125,8 +137,11 @@ export class TabletopRoom extends Room<LobbyState> {
       if (rejoined) rejoined.connected = true;
       this.game?.onPlayerRejoin(client);
     } catch {
-      this.removePlayer(client.sessionId);
-      this.game?.onPlayerLeave(client, false);
+      if (this.game && this.state.phase === "in-game") {
+        this.game.onPlayerLeave(client, false);
+      } else {
+        this.removePlayer(client.sessionId);
+      }
     }
   }
 

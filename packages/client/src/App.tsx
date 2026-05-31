@@ -33,7 +33,9 @@ export function App() {
         if (cancelled) return;
         setRoom(r);
         const phase = r.state?.phase ?? "lobby";
-        navigate(phase === "in-game" ? "/game" : "/lobby", { replace: true });
+        navigate(phase === "in-game" || phase === "post-game" ? "/game" : "/lobby", {
+          replace: true,
+        });
       } catch {
         clearSession();
         if (!cancelled) navigate("/", { replace: true });
@@ -48,8 +50,8 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Whenever the active room is replaced, refresh the session token (Colyseus
-  // rotates it on reconnect) and clear storage if the connection drops.
+  // Per-game private message handlers are registered synchronously in
+  // roomStore.setRoom. Here we only handle the disconnect flow.
   useEffect(() => {
     if (!room) return;
     const onLeaveHandler = () => {

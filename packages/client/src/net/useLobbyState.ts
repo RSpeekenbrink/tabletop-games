@@ -17,23 +17,28 @@ export interface LobbySnapshot {
   players: Array<{ sessionId: string; username: string; connected: boolean }>;
 }
 
-function snapshot(state: LobbyState): LobbySnapshot {
+function snapshot(state: LobbyState | undefined): LobbySnapshot | null {
+  // Colyseus may not have populated the state schema yet on the first read
+  // after create()/joinById() — fields like `players` can be undefined for
+  // a single frame. Return null so the consumer holds off until the first
+  // state-change patch arrives.
+  if (!state || !state.players) return null;
   const players: LobbySnapshot["players"] = [];
   state.players.forEach((p) => {
     players.push({ sessionId: p.sessionId, username: p.username, connected: p.connected });
   });
   return {
-    hostSessionId: state.hostSessionId,
-    selectedGameId: state.selectedGameId,
-    phase: state.phase,
-    shortcode: state.shortcode,
+    hostSessionId: state.hostSessionId ?? "",
+    selectedGameId: state.selectedGameId ?? "",
+    phase: state.phase ?? "lobby",
+    shortcode: state.shortcode ?? "",
     players,
   };
 }
 
 export function useLobbyState(): LobbySnapshot | null {
   const room = useRoomStore((s) => s.room);
-  const [state, setState] = useState<LobbySnapshot | null>(
+  const [state, setState] = useState<LobbySnapshot | null>(() =>
     room ? snapshot(room.state) : null,
   );
 
