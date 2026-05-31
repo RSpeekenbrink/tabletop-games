@@ -272,14 +272,20 @@ the actual contents never leave the server.
 current hand if they are the President or Chancellor in a legislative
 phase. The schema patches catch them up on everything public.
 
-### Restart and return-to-lobby
+### Restart, return-to-lobby, and cancel
 
-The host gets two buttons from the game-over panel:
+The host can:
 
-- **Play again** sends `MSG.RESTART_GAME`. The room creates a fresh
-  `SecretHitlerInstance`, which builds a new `SecretHitlerState` and
-  re-rolls roles.
-- **Back to lobby** sends `MSG.RETURN_TO_LOBBY`. The room clears the
-  nested SH state and sets `phase = "lobby"`.
+- **Play again** (game-over only). Sends `MSG.RESTART_GAME`. The room
+  creates a fresh `SecretHitlerInstance`, which builds a new
+  `SecretHitlerState` and re-rolls roles.
+- **Back to lobby** (game-over). Sends `MSG.RETURN_TO_LOBBY`. The room
+  clears the nested SH state and sets `phase = "lobby"`.
+- **Cancel game** (in-game, any phase except `game-over`). A small
+  button in the header's right column. Same effect as Back to lobby:
+  sends `MSG.RETURN_TO_LOBBY`, which the server accepts from any
+  non-lobby phase. A `window.confirm` prompts before sending so a
+  misclick doesn't abandon a round in progress.
 
-Both are host-only.
+All three are host-only. Non-host clients see no buttons at all - they
+follow the host's decision when the state transitions.

@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import type { LobbyState } from "@tabletop-games/shared";
 import { colyseusClient } from "./net/colyseusClient.js";
-import { clearSession, getSession } from "./net/session.js";
+import { clearSession, getSession, setSession } from "./net/session.js";
 import { useRoomStore } from "./net/roomStore.js";
 import { Landing } from "./screens/Landing.js";
 import { Lobby } from "./screens/Lobby.js";
@@ -14,11 +14,16 @@ export function App() {
   const setRoom = useRoomStore((s) => s.setRoom);
   const [bootstrapped, setBootstrapped] = useState(false);
 
-  // On first mount, attempt to reconnect using the persisted Colyseus
-  // reconnectionToken. If it succeeds we drop straight into the lobby/game;
-  // if not (room gone, timeout expired) we clear and show the landing screen.
+  // Boot-time reconnect. We use a ref to dedupe across React StrictMode's
+  // dev-mode double-mount: tokens are single-use, so a second attempt with
+  // the same token would always fail and clear the session, evicting the
+  // user from the room the first attempt successfully reconnected to.
+  const bootStartedRef = useRef(false);
+
   useEffect(() => {
-    let cancelled = false;
+    if (bootStartedRef.current) return;
+    bootStartedRef.current = true;
+
     const session = getSession();
     if (!session) {
       setBootstrapped(true);
@@ -27,10 +32,14 @@ export function App() {
 
     void (async () => {
       try {
-        const r = await colyseusClient.reconnect<LobbyState>(
-          session.reconnectionToken,
-        );
-        if (cancelled) return;
+        const r = await colyseusClient.reconnect<LobbyState>(session.reconnectionToken);
+        // Persist the (possibly rotated) token so the next refresh has a
+        // valid one to use.
+        setSession({
+          roomId: r.roomId,
+          reconnectionToken: r.reconnectionToken,
+          username: session.username,
+        });
         setRoom(r);
         const phase = r.state?.phase ?? "lobby";
         navigate(phase === "in-game" || phase === "post-game" ? "/game" : "/lobby", {
@@ -38,24 +47,25 @@ export function App() {
         });
       } catch {
         clearSession();
-        if (!cancelled) navigate("/", { replace: true });
+        navigate("/", { replace: true });
       } finally {
-        if (!cancelled) setBootstrapped(true);
+        setBootstrapped(true);
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Per-game private message handlers are registered synchronously in
-  // roomStore.setRoom. Here we only handle the disconnect flow.
+  // When the room emits onLeave (network drop, server dispose, voluntary
+  // leave), drop the in-memory room reference so the screens redirect to
+  // the landing page. We deliberately DO NOT clear the persisted session
+  // here: on a browser refresh the close event can fire during unload and
+  // wipe localStorage before the new page can use it to reconnect. The
+  // Lobby's explicit "Leave" button clears the session itself before
+  // calling room.leave(true), and a failed reconnect on the next boot
+  // clears it via the boot effect's catch branch.
   useEffect(() => {
     if (!room) return;
     const onLeaveHandler = () => {
-      clearSession();
       setRoom(null);
       navigate("/", { replace: true });
     };
