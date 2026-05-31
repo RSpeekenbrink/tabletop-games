@@ -9,6 +9,7 @@ export const MSG = {
   START_GAME: "start_game",
   RESTART_GAME: "restart_game",
   RETURN_TO_LOBBY: "return_to_lobby",
+  APPOINT_HOST: "appoint_host",
 
   // Generic
   CHAT: "chat",
@@ -32,6 +33,10 @@ export interface ChatPayload {
 export interface GameActionPayload {
   type: string;
   data?: unknown;
+}
+
+export interface AppointHostPayload {
+  sessionId: string;
 }
 
 export type LobbyPhase = "lobby" | "in-game" | "post-game";

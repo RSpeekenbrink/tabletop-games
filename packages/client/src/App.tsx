@@ -59,7 +59,7 @@ export function App() {
   // leave), drop the in-memory room reference so the screens redirect to
   // the landing page. We deliberately DO NOT clear the persisted session
   // here: on a browser refresh the close event can fire during unload and
-  // wipe localStorage before the new page can use it to reconnect. The
+  // wipe sessionStorage before the new page can use it to reconnect. The
   // Lobby's explicit "Leave" button clears the session itself before
   // calling room.leave(true), and a failed reconnect on the next boot
   // clears it via the boot effect's catch branch.

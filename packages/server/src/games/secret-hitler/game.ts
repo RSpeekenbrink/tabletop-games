@@ -40,9 +40,13 @@ export class SecretHitlerInstance implements GameInstance {
     const root = this.root;
     const sh = new SecretHitlerState();
 
-    // Build seat order + assign roles from the current lobby roster.
+    // Build seat order + assign roles from the current lobby roster. Only
+    // currently-connected players are seated; offline lingerers can stay in
+    // the lobby list but don't participate in the game.
     const sessionIds: string[] = [];
-    root.players.forEach((p) => sessionIds.push(p.sessionId));
+    root.players.forEach((p) => {
+      if (p.connected) sessionIds.push(p.sessionId);
+    });
     const seatOrder = shuffle(sessionIds);
     for (const sid of seatOrder) sh.seatOrder.push(sid);
 
