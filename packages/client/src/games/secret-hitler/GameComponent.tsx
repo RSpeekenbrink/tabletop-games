@@ -26,7 +26,7 @@ export function SecretHitlerGame({ room }: { room: Room }) {
     <>
       <SHScene state={state} />
       <div className="sh-overlay">
-        <Header state={state} />
+        <Header state={state} room={room} mySessionId={room.sessionId} />
         <div className="sh-middle">
           <PlayerList state={state} mySessionId={room.sessionId} />
           <div className="sh-center-col">
