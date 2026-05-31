@@ -17,9 +17,7 @@ Hosting a tabletop game night online usually means juggling a different site per
 game. **Tabletop Games** is a single platform where you create a room, invite
 friends, and pick a game from a built-in catalog. Each game is a self-contained
 module with its own server logic and 3D scene, so adding a new game means
-dropping a folder into the repo — not rewriting the framework.
-
-The first game on the roadmap is **Secret Hitler** (5-10 players, full ruleset).
+dropping a folder into the repo, not rewriting the framework.
 
 ## How it works
 
@@ -38,8 +36,7 @@ The first game on the roadmap is **Secret Hitler** (5-10 players, full ruleset).
 
 - **The server is authoritative.** All game state lives in a Colyseus `Schema`
   on the server; the client receives filtered patches. Hidden information (e.g.
-  Secret Hitler roles, the policy hand) is never sent to clients who shouldn't
-  see it.
+  private hands, secret roles) is never sent to clients who shouldn't see it.
 - **One room type, many games.** A single `TabletopRoom` owns the lobby
   (players, host, chat, game selection). When the host starts a game, the room
   instantiates a `GameInstance` from the registry and delegates all in-game
@@ -51,7 +48,7 @@ The first game on the roadmap is **Secret Hitler** (5-10 players, full ruleset).
   `Q7HK`) stored in the room metadata. Joiners hit `GET /api/rooms/:shortcode`
   to resolve it to the internal Colyseus room id.
 - **One container.** Production builds the client with Vite and serves the
-  static bundle from the same Node process that runs the Colyseus server — one
+  static bundle from the same Node process that runs the Colyseus server. One
   image, one port (2567).
 
 ## Tech stack
@@ -71,7 +68,7 @@ tabletop-games/
 │   ├── shared/         GameDescriptor, message constants, LobbyState/PlayerSchema
 │   ├── server/         Colyseus + Express, TabletopRoom, game registry
 │   └── client/         React + Vite + r3f, screens, client-side game registry
-├── Dockerfile          multi-stage: deps → build → runtime
+├── Dockerfile          multi-stage build + runtime image
 ├── docker-compose.yml
 └── tsconfig.base.json
 ```
@@ -89,7 +86,7 @@ This runs three things concurrently:
 
 | Workspace | Port | Notes                                              |
 | --------- | ---- | -------------------------------------------------- |
-| shared    | —    | `tsc --watch`                                      |
+| shared    | n/a  | `tsc --watch`                                      |
 | server    | 2567 | Colyseus + Express via `tsx watch`                 |
 | client    | 5173 | Vite dev server; proxies `/api`, `/matchmake`, `/colyseus` to 2567 |
 
@@ -125,14 +122,6 @@ registers itself in the corresponding registry. The lobby's game picker is
 populated from the server registry via `GET /api/games`; the client's
 `GameView` mounts the matching client component when the host starts the game.
 No core code needs to change to add a game.
-
-## Roadmap
-
-- [x] **Phase 1** — Infrastructure: lobby, room create/join by code, host
-      transfer, reconnection, Dockerfile, game registry plumbing.
-- [ ] **Phase 2** — Secret Hitler (5-10 players, full ruleset, executive
-      powers, veto, all four win conditions, 3D policy tracks).
-- [ ] **Phase 3+** — Additional games via the registry.
 
 ## License
 

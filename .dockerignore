@@ -2,6 +2,8 @@ node_modules
 **/node_modules
 dist
 **/dist
+*.tsbuildinfo
+**/*.tsbuildinfo
 .idea
 .vscode
 .git
@@ -10,3 +12,5 @@ dist
 *.log
 .env
 .env.*
+README.md
+tabletop_games.png
