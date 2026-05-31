@@ -13,6 +13,11 @@ export function App() {
   const room = useRoomStore((s) => s.room);
   const setRoom = useRoomStore((s) => s.setRoom);
   const [bootstrapped, setBootstrapped] = useState(false);
+  // When the boot-time reconnect fails we deliberately don't wipe the stored
+  // session: the most common cause is "another tab of mine is already in this
+  // room", and the original tab needs its token intact. We surface an error
+  // screen that lets the user retry or explicitly start fresh.
+  const [reconnectFailed, setReconnectFailed] = useState(false);
 
   // Boot-time reconnect. We use a ref to dedupe across React StrictMode's
   // dev-mode double-mount: tokens are single-use, so a second attempt with
@@ -46,8 +51,11 @@ export function App() {
           replace: true,
         });
       } catch {
-        clearSession();
-        navigate("/", { replace: true });
+        // Don't clear the stored session. The token may still be valid for
+        // the original tab — Colyseus rejects a reconnect while the original
+        // socket is still alive, and using clearSession() here would wipe the
+        // shared localStorage entry the original tab relies on.
+        setReconnectFailed(true);
       } finally {
         setBootstrapped(true);
       }
@@ -59,10 +67,9 @@ export function App() {
   // leave), drop the in-memory room reference so the screens redirect to
   // the landing page. We deliberately DO NOT clear the persisted session
   // here: on a browser refresh the close event can fire during unload and
-  // wipe sessionStorage before the new page can use it to reconnect. The
+  // wipe localStorage before the new page can use it to reconnect. The
   // Lobby's explicit "Leave" button clears the session itself before
-  // calling room.leave(true), and a failed reconnect on the next boot
-  // clears it via the boot effect's catch branch.
+  // calling room.leave(true).
   useEffect(() => {
     if (!room) return;
     const onLeaveHandler = () => {
@@ -77,6 +84,33 @@ export function App() {
     return (
       <div className="screen screen-center">
         <div className="muted">Connecting…</div>
+      </div>
+    );
+  }
+
+  if (reconnectFailed) {
+    return (
+      <div className="screen screen-center">
+        <div className="card">
+          <h2 style={{ margin: 0 }}>Already connected</h2>
+          <div className="muted">
+            We couldn't reconnect this tab. You're probably already in this room
+            in another tab — switch to that tab to keep playing. If your
+            session has expired instead, start a fresh one.
+          </div>
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <button
+              onClick={() => {
+                clearSession();
+                setReconnectFailed(false);
+                navigate("/", { replace: true });
+              }}
+            >
+              Start fresh
+            </button>
+            <button onClick={() => window.location.reload()}>Retry</button>
+          </div>
+        </div>
       </div>
     );
   }
