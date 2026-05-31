@@ -5,6 +5,7 @@ import { MSG } from "@tabletop-games/shared";
 import { useRoomStore } from "../net/roomStore.js";
 import { useLobbyState } from "../net/useLobbyState.js";
 import { clearSession } from "../net/session.js";
+import logoUrl from "../assets/branding/tabletop_games.png";
 
 export function Lobby() {
   const navigate = useNavigate();
@@ -55,7 +56,10 @@ export function Lobby() {
     <div className="lobby">
       <div className="lobby-main">
         <div className="row" style={{ justifyContent: "space-between" }}>
-          <h2 style={{ margin: 0 }}>Lobby</h2>
+          <div className="row">
+            <img src={logoUrl} alt="Tabletop Games" className="lobby-logo" />
+            <h2 style={{ margin: 0 }}>Lobby</h2>
+          </div>
           <button onClick={leave}>Leave</button>
         </div>
 

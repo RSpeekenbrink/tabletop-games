@@ -15,6 +15,8 @@ Technical documentation for the Tabletop Games platform.
 - [Adding a game](adding-a-game.md) - How to wire a new game into the
   platform. Each game lives in three sibling folders (shared/server/client)
   and registers itself in two registries.
+- [Assets](assets.md) - Where images, textures, and other static files
+  live; how the client imports them; per-game asset conventions.
 - [Operations](operations.md) - Running locally, the Docker image, ports,
   environment variables, and reverse-proxy notes for production.
 - [Games](games/) - Per-game rules and implementation notes.

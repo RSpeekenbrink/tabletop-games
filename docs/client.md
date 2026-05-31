@@ -132,6 +132,20 @@ Each hook:
 The lazy-init form `useState(() => snapshot(...))` is used so the
 initialiser only runs once on mount.
 
+## Assets
+
+Static files (logos, card textures, role icons) live next to the code
+that uses them and are pulled in with `import` so Vite can hash and
+validate them:
+
+- `packages/client/src/assets/` — app-shell visuals (the lobby logo).
+- `packages/client/src/games/<id>/assets/` — per-game art.
+
+The repo-root `assets/` folder holds design originals; consumed copies
+are dropped into the appropriate package folder. See
+[assets.md](assets.md) for the full convention and Three.js texture
+pattern.
+
 ## Three.js scenes
 
 `src/three/Scene.tsx` and `src/three/Table.tsx` are reusable building

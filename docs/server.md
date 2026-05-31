@@ -142,6 +142,7 @@ full flow.
 | `/api/rooms/:shortcode`       | GET    | Resolve shortcode to `roomId`. 404 if unknown. |
 | `/matchmake/*`                | (Colyseus) | Standard Colyseus matchmaking endpoints. |
 | `/colyseus`                   | GET    | Colyseus monitor dashboard. Mounted only when `NODE_ENV !== "production"`. |
+| `/playground`                 | GET    | Colyseus playground — interactive room tester. Mounted only when `NODE_ENV !== "production"`; the `@colyseus/playground` package is loaded via dynamic `import()` so it stays out of production bundles. |
 | `*` (anything else)           | GET    | Static client bundle, then `index.html` for SPA fallback. |
 
 ## Express 5 wildcard note

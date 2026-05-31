@@ -9,6 +9,7 @@ export default defineConfig({
       "/api": "http://localhost:2567",
       "/matchmake": "http://localhost:2567",
       "/colyseus": "http://localhost:2567",
+      "/playground": "http://localhost:2567",
     },
   },
   build: {
