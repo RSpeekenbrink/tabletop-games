@@ -1,11 +1,13 @@
 import { Room } from "colyseus.js";
 import { create } from "zustand";
 import type { LobbyState } from "@tabletop-games/shared";
+import { listClientGames } from "../games/registry.js";
 
 /**
- * A single Colyseus room is held in a Zustand store so any component can read
- * it without prop-drilling. Components that want reactive state should call
- * `useLobbyState()` which subscribes to state-change events.
+ * The active Colyseus room. When set, we synchronously register every
+ * registered game's private-message handlers on the new room so that
+ * messages the server sends at game start (or on rejoin) aren't dropped
+ * while React still mounts the GameView component.
  */
 interface RoomStore {
   room: Room<LobbyState> | null;
@@ -14,5 +16,12 @@ interface RoomStore {
 
 export const useRoomStore = create<RoomStore>((set) => ({
   room: null,
-  setRoom: (room) => set({ room }),
+  setRoom: (room) => {
+    if (room) {
+      for (const game of listClientGames()) {
+        game.setupRoomHandlers?.(room);
+      }
+    }
+    set({ room });
+  },
 }));

@@ -121,8 +121,27 @@ A game module exports a `GameDescriptor` (id, name, min/max players) and
 registers itself in the corresponding registry. The lobby's game picker is
 populated from the server registry via `GET /api/games`; the client's
 `GameView` mounts the matching client component when the host starts the game.
-No core code needs to change to add a game.
+
+See [docs/adding-a-game.md](docs/adding-a-game.md) for a step-by-step walkthrough.
+
+## Documentation
+
+Full technical and game-mechanics documentation lives in [docs/](docs/README.md):
+
+- [Architecture](docs/architecture.md)
+- [Server internals](docs/server.md)
+- [Client internals](docs/client.md)
+- [Adding a game](docs/adding-a-game.md)
+- [Operations](docs/operations.md) (running locally, Docker, reverse proxy)
+- [Secret Hitler](docs/games/secret-hitler.md) (rules + implementation)
 
 ## License
 
-TBD.
+This project is licensed under the
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License
+(CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+See [LICENSE](LICENSE) for the full text.
+
+The Secret Hitler ruleset is a separate work by Mike Boxleiter, Tommy Maranges,
+Max Temkin, and Mac Schubert, released under the same license. See
+<https://www.secrethitler.com/>.

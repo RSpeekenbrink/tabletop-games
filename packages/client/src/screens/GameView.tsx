@@ -17,7 +17,9 @@ export function GameView() {
   }, [room, navigate]);
 
   useEffect(() => {
-    if (state && state.phase !== "in-game") navigate("/lobby");
+    if (state && state.phase !== "in-game" && state.phase !== "post-game") {
+      navigate("/lobby");
+    }
   }, [state?.phase, navigate, state]);
 
   if (!room || !state) return null;

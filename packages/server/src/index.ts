@@ -8,6 +8,8 @@ import { fileURLToPath } from "node:url";
 
 import { TabletopRoom } from "./rooms/TabletopRoom.js";
 import { listGames } from "./games/registry.js";
+// Side-effect imports register concrete games into the server registry.
+import "./games/secret-hitler/index.js";
 
 const PORT = Number(process.env.PORT ?? 2567);
 const CLIENT_DIST = process.env.CLIENT_DIST

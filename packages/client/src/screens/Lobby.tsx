@@ -28,7 +28,7 @@ export function Lobby() {
   }, []);
 
   useEffect(() => {
-    if (state?.phase === "in-game") navigate("/game");
+    if (state?.phase === "in-game" || state?.phase === "post-game") navigate("/game");
   }, [state?.phase, navigate]);
 
   if (!room || !state) return null;
