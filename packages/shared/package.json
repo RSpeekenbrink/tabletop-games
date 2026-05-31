@@ -17,9 +17,9 @@
     "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput"
   },
   "dependencies": {
-    "@colyseus/schema": "^3.0.0"
+    "@colyseus/schema": "^3.0.76"
   },
   "devDependencies": {
-    "typescript": "^5.5.3"
+    "typescript": "^6.0.3"
   }
 }

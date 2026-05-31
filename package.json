@@ -21,7 +21,7 @@
     "docker:run": "docker run --rm -p 2567:2567 tabletop-games"
   },
   "devDependencies": {
-    "concurrently": "^9.0.1",
-    "typescript": "^5.5.3"
+    "concurrently": "^10.0.0",
+    "typescript": "^6.0.3"
   }
 }

@@ -10,18 +10,18 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@colyseus/core": "^0.16.0",
-    "@colyseus/schema": "^3.0.0",
-    "@colyseus/ws-transport": "^0.16.0",
-    "@colyseus/monitor": "^0.16.0",
+    "@colyseus/core": "^0.16.24",
+    "@colyseus/schema": "^3.0.76",
+    "@colyseus/ws-transport": "^0.16.5",
+    "@colyseus/monitor": "^0.16.7",
     "@tabletop-games/shared": "*",
-    "colyseus": "^0.16.0",
-    "express": "^4.21.1"
+    "colyseus": "^0.16.5",
+    "express": "^5.2.1"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
-    "@types/node": "^22.5.0",
-    "tsx": "^4.19.0",
-    "typescript": "^5.5.3"
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.19.19",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
   }
 }

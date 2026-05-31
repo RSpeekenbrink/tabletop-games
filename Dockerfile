@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ---- build: install all deps, compile shared+server, vite-build client ----
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 # Copy only manifests first so the install layer is cached when source changes.
@@ -18,7 +18,7 @@ COPY . .
 RUN npm run build
 
 # ---- runtime: production deps only + compiled output ----
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=2567

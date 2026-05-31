@@ -46,7 +46,7 @@ if (process.env.NODE_ENV !== "production") {
 // Serve the built client. In production the Dockerfile copies the client dist
 // next to the server dist; in dev, CLIENT_DIST may not exist (Vite serves it).
 app.use(express.static(CLIENT_DIST));
-app.get("*", (req, res, next) => {
+app.get("/*splat", (req, res, next) => {
   if (req.path.startsWith("/api") || req.path.startsWith("/matchmake") || req.path.startsWith("/colyseus")) {
     return next();
   }
