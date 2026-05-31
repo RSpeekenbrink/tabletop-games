@@ -1,0 +1,30 @@
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+**/dist/
+out-tsc/
+**/out-tsc/
+
+# Tooling
+.pnp
+.pnp.js
+.vscode/*
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Tmp
+/tmp

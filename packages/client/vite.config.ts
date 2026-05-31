@@ -1,0 +1,18 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5173,
+    proxy: {
+      "/api": "http://localhost:2567",
+      "/matchmake": "http://localhost:2567",
+      "/colyseus": "http://localhost:2567",
+    },
+  },
+  build: {
+    outDir: "dist",
+    sourcemap: true,
+  },
+});

@@ -1,0 +1,27 @@
+{
+  "name": "tabletop-games",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser-based tabletop simulator with pluggable games",
+  "workspaces": [
+    "packages/shared",
+    "packages/server",
+    "packages/client"
+  ],
+  "scripts": {
+    "build": "npm run build -w @tabletop-games/shared && npm run build -w @tabletop-games/client && npm run build -w @tabletop-games/server",
+    "build:shared": "npm run build -w @tabletop-games/shared",
+    "build:client": "npm run build -w @tabletop-games/client",
+    "build:server": "npm run build -w @tabletop-games/server",
+    "dev": "concurrently -n shared,server,client -c blue,green,magenta \"npm run dev -w @tabletop-games/shared\" \"npm run dev -w @tabletop-games/server\" \"npm run dev -w @tabletop-games/client\"",
+    "dev:server": "npm run dev -w @tabletop-games/server",
+    "dev:client": "npm run dev -w @tabletop-games/client",
+    "start": "node packages/server/dist/index.js",
+    "docker:build": "docker build -t tabletop-games .",
+    "docker:run": "docker run --rm -p 2567:2567 tabletop-games"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "typescript": "^5.5.3"
+  }
+}
