@@ -26,6 +26,7 @@ packages/
     ├── GameComponent.tsx
     ├── useYGState.ts   # state snapshot hook
     ├── privateInfo.ts  # zustand store for hidden info (optional)
+    ├── assets/         # cards/, board/, icons/, ... (see assets.md)
     ├── scene/          # react-three-fiber pieces
     └── ui/             # React overlay components
 ```
@@ -183,6 +184,15 @@ frame can pass between create-resolve and the first patch arriving.
 
 If your game has hidden info (roles, hands), create a zustand store with
 plain setters. Mirror `packages/client/src/games/secret-hitler/privateInfo.ts`.
+
+### Assets
+
+Drop card art, board textures, role icons, etc. under
+`packages/client/src/games/your-game/assets/`, grouped by kind
+(`cards/`, `board/`, `icons/`, …). Import them with relative paths so
+Vite hashes and validates them at build time. See
+[assets.md](assets.md) for the full convention (including the
+`useTexture` pattern for Three.js meshes).
 
 ### React UI
 

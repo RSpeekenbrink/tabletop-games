@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="tabletop_games.png" alt="Tabletop Games" width="200" />
+  <img src="assets/tabletop_games.png" alt="Tabletop Games" width="500" />
 </p>
-
-<h1 align="center">Tabletop Games</h1>
 
 <p align="center">
   A browser-based, multiplayer tabletop simulator with a pluggable game registry.

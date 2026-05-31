@@ -18,11 +18,30 @@ npm run dev
 | `@tabletop-games/server`   | 2567 | Colyseus + Express, hot-reloaded with `tsx watch`   |
 | `@tabletop-games/client`   | 5173 | Vite dev server                                     |
 
-Vite proxies `/api`, `/matchmake`, and `/colyseus` to `http://localhost:2567`
-so a single origin works from the browser at <http://localhost:5173>.
+Vite proxies `/api`, `/matchmake`, `/colyseus`, and `/playground` to
+`http://localhost:2567` so a single origin works from the browser at
+<http://localhost:5173>.
 
-In dev, the Colyseus monitor dashboard is mounted at
-<http://localhost:2567/colyseus> (only when `NODE_ENV !== "production"`).
+### Dev-only dashboards
+
+Two diagnostic UIs are mounted on the server when `NODE_ENV !== "production"`.
+They share the same gating in `packages/server/src/index.ts`, so a single
+`NODE_ENV=production` env var keeps both out of a deployed image.
+
+| URL                                                            | What it's for |
+|----------------------------------------------------------------|---------------|
+| <http://localhost:2567/colyseus>                               | **Monitor** — read-only dashboard listing live rooms, client counts, and the current state snapshot of each room. Useful for confirming patches landed, watching seat changes, or sanity-checking that a stuck client really disconnected. |
+| <http://localhost:2567/playground>                             | **Playground** — interactive room tester. Lists every room type registered via `gameServer.define(...)` (currently just `tabletop-games`) and lets you spin up fake clients, send messages, and watch state patches without running the React client. Handy for exercising new server-side message handlers in isolation. |
+
+Both are also reachable through the Vite dev server proxy at
+<http://localhost:5173/colyseus> and <http://localhost:5173/playground>
+if you prefer to stay on a single origin.
+
+The playground is pulled in via a dynamic `import("@colyseus/playground")`
+inside the dev-only branch, and the package is listed under
+`devDependencies` only, so it isn't installed in the runtime Docker image
+and won't be reached at runtime there even if `NODE_ENV` were
+mis-configured.
 
 ## Production build
 
@@ -78,7 +97,7 @@ docker compose up --build
 |---------------|--------------------|---------|
 | `PORT`        | `2567`             | TCP port the HTTP server (which also hosts WebSockets) binds to. |
 | `CLIENT_DIST` | `../client/dist`   | Absolute or relative path to the built client bundle. Resolved relative to the compiled server entry. The Docker image leaves this at the default. |
-| `NODE_ENV`    | unset              | When `production`, the Colyseus monitor at `/colyseus` is **not** mounted. |
+| `NODE_ENV`    | unset              | When `production`, the dev-only Colyseus monitor (`/colyseus`) and playground (`/playground`) are **not** mounted. |
 | `VITE_COLYSEUS_URL` | unset       | Build-time only. Override the WebSocket endpoint used by the client. If unset, the client uses `ws[s]://<current host>`. |
 
 ## Ports and reverse proxy

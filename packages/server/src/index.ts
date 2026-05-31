@@ -40,16 +40,23 @@ app.get("/api/rooms/:shortcode", async (req, res) => {
   res.json({ roomId: match.roomId, shortcode });
 });
 
-// Dev-only Colyseus monitor at /colyseus
+// Dev-only Colyseus monitor at /colyseus and playground at /playground
 if (process.env.NODE_ENV !== "production") {
   app.use("/colyseus", monitor());
+  const { playground } = await import("@colyseus/playground");
+  app.use("/playground", playground());
 }
 
 // Serve the built client. In production the Dockerfile copies the client dist
 // next to the server dist; in dev, CLIENT_DIST may not exist (Vite serves it).
 app.use(express.static(CLIENT_DIST));
 app.get("/*splat", (req, res, next) => {
-  if (req.path.startsWith("/api") || req.path.startsWith("/matchmake") || req.path.startsWith("/colyseus")) {
+  if (
+    req.path.startsWith("/api") ||
+    req.path.startsWith("/matchmake") ||
+    req.path.startsWith("/colyseus") ||
+    req.path.startsWith("/playground")
+  ) {
     return next();
   }
   res.sendFile(path.join(CLIENT_DIST, "index.html"), (err) => {
