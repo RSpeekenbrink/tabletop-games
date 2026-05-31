@@ -6,6 +6,7 @@ import {
   type SelectGamePayload,
   type ChatPayload,
   type GameActionPayload,
+  type AppointHostPayload,
 } from "@tabletop-games/shared";
 
 import { getGame } from "../games/registry.js";
@@ -48,7 +49,9 @@ export class TabletopRoom extends Room<LobbyState> {
       const module = getGame(this.state.selectedGameId);
       if (!module) return;
 
-      const playerCount = this.state.players.size;
+      // Only connected players actually participate — offline players linger
+      // in the seat list but shouldn't count toward (or block) game start.
+      const playerCount = this.connectedPlayerCount();
       if (
         playerCount < module.descriptor.minPlayers ||
         playerCount > module.descriptor.maxPlayers
@@ -79,6 +82,15 @@ export class TabletopRoom extends Room<LobbyState> {
       this.game = null;
       this.state.secretHitler = undefined;
       this.state.phase = "lobby";
+    });
+
+    this.onMessage(MSG.APPOINT_HOST, (client, payload: AppointHostPayload) => {
+      if (!this.isHost(client)) return;
+      const targetSid = payload?.sessionId;
+      if (!targetSid || targetSid === client.sessionId) return;
+      const target = this.state.players.get(targetSid);
+      if (!target || !target.connected) return;
+      this.state.hostSessionId = targetSid;
     });
 
     this.onMessage(MSG.CHAT, (client, payload: ChatPayload) => {
@@ -120,6 +132,13 @@ export class TabletopRoom extends Room<LobbyState> {
     const player = this.state.players.get(client.sessionId);
     if (player) player.connected = false;
 
+    // Hand the host badge over immediately so the lobby keeps working while
+    // the original host is offline. If they reconnect they're back as a
+    // regular player; an explicit APPOINT_HOST can hand it back.
+    if (this.state.hostSessionId === client.sessionId) {
+      this.transferHostFrom(client.sessionId);
+    }
+
     if (consented) {
       if (this.game && this.state.phase === "in-game") {
         // Mid-game voluntary leave is an elimination — let the game record it
@@ -139,18 +158,43 @@ export class TabletopRoom extends Room<LobbyState> {
     } catch {
       if (this.game && this.state.phase === "in-game") {
         this.game.onPlayerLeave(client, false);
-      } else {
-        this.removePlayer(client.sessionId);
       }
+      // In lobby / post-game, keep the disconnected seat visible (matches how
+      // in-game treats offline players). The current host can hand off via
+      // APPOINT_HOST if they want to clean up.
     }
   }
 
   private removePlayer(sessionId: string): void {
     this.state.players.delete(sessionId);
     if (this.state.hostSessionId === sessionId) {
-      const next = this.state.players.keys().next().value;
-      this.state.hostSessionId = next ?? "";
+      this.transferHostFrom(sessionId);
     }
+  }
+
+  private transferHostFrom(currentHostSid: string): void {
+    // Prefer the next connected player; fall back to any other player if
+    // everyone else is offline so the badge is at least held by a known seat.
+    let next = "";
+    this.state.players.forEach((p, sid) => {
+      if (next || sid === currentHostSid) return;
+      if (p.connected) next = sid;
+    });
+    if (!next) {
+      this.state.players.forEach((_p, sid) => {
+        if (next || sid === currentHostSid) return;
+        next = sid;
+      });
+    }
+    this.state.hostSessionId = next;
+  }
+
+  private connectedPlayerCount(): number {
+    let n = 0;
+    this.state.players.forEach((p) => {
+      if (p.connected) n++;
+    });
+    return n;
   }
 
   private isHost(client: Client): boolean {

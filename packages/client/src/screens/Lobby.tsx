@@ -107,20 +107,32 @@ export function Lobby() {
 
       <div className="lobby-side">
         <div className="muted">Players</div>
-        {state.players.map((p) => (
-          <div key={p.sessionId} className="player-row">
-            <span>
-              {p.username}
-              {p.sessionId === mySessionId ? " (you)" : ""}
-            </span>
-            <span className="row" style={{ gap: "0.25rem" }}>
-              {p.sessionId === state.hostSessionId && (
-                <span className="badge host">host</span>
-              )}
-              {!p.connected && <span className="badge offline">offline</span>}
-            </span>
-          </div>
-        ))}
+        {state.players.map((p) => {
+          const isThisHost = p.sessionId === state.hostSessionId;
+          const canAppoint = isHost && !isThisHost && p.connected;
+          return (
+            <div key={p.sessionId} className="player-row">
+              <span>
+                {p.username}
+                {p.sessionId === mySessionId ? " (you)" : ""}
+              </span>
+              <span className="row" style={{ gap: "0.25rem" }}>
+                {isThisHost && <span className="badge host">host</span>}
+                {!p.connected && <span className="badge offline">offline</span>}
+                {canAppoint && (
+                  <button
+                    onClick={() =>
+                      room.send(MSG.APPOINT_HOST, { sessionId: p.sessionId })
+                    }
+                    title="Make this player the host"
+                  >
+                    Make host
+                  </button>
+                )}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
