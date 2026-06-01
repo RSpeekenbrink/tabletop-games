@@ -111,6 +111,10 @@ function Seat({
     player.sessionId === state.chancellorSessionId ||
     player.sessionId === state.chancellorNomineeSessionId;
   const isMe = player.sessionId === mySessionId;
+  // Last *successfully elected* government — term-limited, so flag them once
+  // they're no longer the sitting office holder.
+  const isLastPres = !isPres && player.sessionId === state.lastPresidentSessionId;
+  const isLastChan = !isChan && player.sessionId === state.lastChancellorSessionId;
 
   const padColor = isPres ? "#caa23a" : isChan ? "#2f8fb3" : "#1d2433";
   const padEmissive = isPres ? "#ffd34d" : isChan ? "#54d0ff" : tappable ? "#3a6" : "#000";
@@ -158,6 +162,8 @@ function Seat({
           <div className="sh3d-seat-tags">
             {isPres && <span className="sh3d-tag pres">President</span>}
             {isChan && <span className="sh3d-tag chan">Chancellor</span>}
+            {isLastPres && <span className="sh3d-tag last-pres">prev. President</span>}
+            {isLastChan && <span className="sh3d-tag last-chan">prev. Chancellor</span>}
             {allyRole && <span className={`sh3d-tag role-${allyRole}`}>{allyRole}</span>}
             {!player.alive && <span className="sh3d-tag dead">✕ dead</span>}
             {player.alive && !player.connected && <span className="sh3d-tag off">offline</span>}
