@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { ErrorCode } from "colyseus.js";
 import { LEAVE_CODE_KICKED, type LobbyState } from "@tabletop-games/shared";
 import { colyseusClient } from "./net/colyseusClient.js";
 import { clearSession, getSession, setSession } from "./net/session.js";
@@ -50,11 +51,21 @@ export function App() {
         navigate(phase === "in-game" || phase === "post-game" ? "/game" : "/lobby", {
           replace: true,
         });
-      } catch {
-        // Don't clear the stored session. The token may still be valid for
-        // the original tab — Colyseus rejects a reconnect while the original
-        // socket is still alive, and using clearSession() here would wipe the
-        // shared localStorage entry the original tab relies on.
+      } catch (err) {
+        // A disposed/missing room means the lobby was deleted while we were
+        // away — the session is dead and unrecoverable, so wipe it and fall
+        // through to the regular landing page rather than nagging the user
+        // about a phantom other tab.
+        if ((err as { code?: number })?.code === ErrorCode.MATCHMAKE_INVALID_ROOM_ID) {
+          clearSession();
+          navigate("/", { replace: true });
+          return;
+        }
+        // Otherwise don't clear the stored session. The token may still be
+        // valid for the original tab — Colyseus rejects a reconnect while the
+        // original socket is still alive (MATCHMAKE_EXPIRED), and using
+        // clearSession() here would wipe the shared localStorage entry the
+        // original tab relies on.
         setReconnectFailed(true);
       } finally {
         setBootstrapped(true);
