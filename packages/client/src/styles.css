@@ -174,6 +174,71 @@ h1, h2, h3 {
   flex-wrap: wrap;
 }
 
+/* ─── Actions menu (⋮ dropdown) ─────────────────────────────────────── */
+
+.actions-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.actions-menu-trigger {
+  min-height: 32px;
+  min-width: 32px;
+  padding: 0 0.5rem;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.actions-menu-trigger:hover:not(:disabled),
+.actions-menu-trigger[aria-expanded="true"] {
+  background: #232a3a;
+  border-color: var(--border);
+  color: inherit;
+}
+
+.actions-menu-popover {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  z-index: 50;
+  min-width: 140px;
+  background: #1c2230;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.actions-menu-popover button {
+  min-height: 36px;
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.actions-menu-popover button:hover:not(:disabled) {
+  background: #29304a;
+}
+
+.actions-menu-popover button.danger {
+  color: #ff9b9b;
+}
+
+.actions-menu-popover button.danger:hover:not(:disabled) {
+  background: #3a2020;
+}
+
 @media (max-width: 720px) {
   .lobby {
     grid-template-columns: 1fr;

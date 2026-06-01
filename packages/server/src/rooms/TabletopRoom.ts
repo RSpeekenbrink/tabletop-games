@@ -1,5 +1,6 @@
 import { Client, Room } from "@colyseus/core";
 import {
+  LEAVE_CODE_KICKED,
   LobbyState,
   MSG,
   PlayerSchema,
@@ -8,6 +9,7 @@ import {
   type ChatPayload,
   type GameActionPayload,
   type AppointHostPayload,
+  type KickPlayerPayload,
 } from "@tabletop-games/shared";
 
 import { getGame } from "../games/registry.js";
@@ -91,6 +93,30 @@ export class TabletopRoom extends Room<LobbyState> {
       const target = this.state.players.get(targetSid);
       if (!target || !target.connected) return;
       this.state.hostSessionId = targetSid;
+    });
+
+    this.onMessage(MSG.KICK_PLAYER, (client, payload: KickPlayerPayload) => {
+      if (!this.isHost(client)) return;
+      // Kicks are a lobby-time tool only — mid-game evictions would need to
+      // unwind game state (votes, hands, role assignments), so we don't
+      // expose them. The host can return to the lobby first if they need to.
+      if (this.state.phase === "in-game") return;
+      const targetSid = payload?.sessionId;
+      if (!targetSid || targetSid === client.sessionId) return;
+      const target = this.state.players.get(targetSid);
+      if (!target) return;
+
+      // Drop the seat first so the forced disconnect's onLeave is a no-op
+      // (it checks for the player and bails). removePlayer handles host
+      // reassignment if somehow the kick target was holding the badge.
+      this.removePlayer(targetSid);
+
+      const targetClient = this.clients.find((c) => c.sessionId === targetSid);
+      if (targetClient) {
+        // 4000 = kicked. The client checks this code to clear its persisted
+        // session so it doesn't try to reconnect on the next page load.
+        targetClient.leave(LEAVE_CODE_KICKED);
+      }
     });
 
     this.onMessage(MSG.CHAT, (client, payload: ChatPayload) => {

@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { GameDescriptor } from "@tabletop-games/shared";
 import { MSG } from "@tabletop-games/shared";
+import type { Room } from "colyseus.js";
 import { useRoomStore } from "../net/roomStore.js";
 import { useLobbyState } from "../net/useLobbyState.js";
 import { clearSession } from "../net/session.js";
@@ -113,31 +114,109 @@ export function Lobby() {
         <div className="muted">Players</div>
         {state.players.map((p) => {
           const isThisHost = p.sessionId === state.hostSessionId;
-          const canAppoint = isHost && !isThisHost && p.connected;
+          const isSelf = p.sessionId === mySessionId;
+          const showMenu = isHost && !isSelf;
           return (
             <div key={p.sessionId} className="player-row">
               <span>
                 {p.username}
-                {p.sessionId === mySessionId ? " (you)" : ""}
+                {isSelf ? " (you)" : ""}
               </span>
               <span className="row" style={{ gap: "0.25rem" }}>
                 {isThisHost && <span className="badge host">host</span>}
                 {!p.connected && <span className="badge offline">offline</span>}
-                {canAppoint && (
-                  <button
-                    onClick={() =>
-                      room.send(MSG.APPOINT_HOST, { sessionId: p.sessionId })
-                    }
-                    title="Make this player the host"
-                  >
-                    Make host
-                  </button>
+                {showMenu && (
+                  <PlayerActionsMenu
+                    room={room}
+                    targetSessionId={p.sessionId}
+                    targetUsername={p.username}
+                    canAppoint={!isThisHost && p.connected}
+                  />
                 )}
               </span>
             </div>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+interface PlayerActionsMenuProps {
+  room: Room;
+  targetSessionId: string;
+  targetUsername: string;
+  canAppoint: boolean;
+}
+
+function PlayerActionsMenu({
+  room,
+  targetSessionId,
+  targetUsername,
+  canAppoint,
+}: PlayerActionsMenuProps) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocPointerDown = (e: PointerEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDocPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDocPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const appoint = () => {
+    room.send(MSG.APPOINT_HOST, { sessionId: targetSessionId });
+    setOpen(false);
+  };
+  const kick = () => {
+    if (!window.confirm(`Kick ${targetUsername} from the room?`)) return;
+    room.send(MSG.KICK_PLAYER, { sessionId: targetSessionId });
+    setOpen(false);
+  };
+
+  return (
+    <div className="actions-menu" ref={wrapRef}>
+      <button
+        type="button"
+        className="actions-menu-trigger"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Actions for ${targetUsername}`}
+        title="Actions"
+        onClick={() => setOpen((v) => !v)}
+      >
+        ⋮
+      </button>
+      {open && (
+        <div className="actions-menu-popover" role="menu">
+          <button
+            type="button"
+            role="menuitem"
+            disabled={!canAppoint}
+            onClick={appoint}
+          >
+            Make host
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="danger"
+            onClick={kick}
+          >
+            Kick
+          </button>
+        </div>
+      )}
     </div>
   );
 }

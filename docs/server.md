@@ -59,6 +59,8 @@ else to the active game:
 | `START_GAME`          | Host only         | Looks up the registered server module by `selectedGameId`, instantiates a fresh `GameInstance`, and calls `game.onStart()`. The instance flips `state.phase = "in-game"` and populates its nested state field. |
 | `RESTART_GAME`        | Host only, post-game | Same as `START_GAME`, but only allowed when `phase === "post-game"`. |
 | `RETURN_TO_LOBBY`     | Host only         | Disposes the game, clears the nested state field, sets `phase = "lobby"`. |
+| `APPOINT_HOST`        | Host only         | Hands the host badge to another *connected* player. |
+| `KICK_PLAYER`         | Host only, lobby/post-game | Removes the target seat and force-disconnects them with WS close code `LEAVE_CODE_KICKED` (4000). The client checks this code in its `room.onLeave` handler to clear its persisted session so it doesn't reconnect-loop on a stale token. Blocked while `phase === "in-game"` to avoid unwinding live game state. |
 | `CHAT`                | Anyone in the room | Broadcasts `{ sessionId, username, text, at }` via `room.broadcast(MSG.CHAT, ...)`. Not persisted in state. |
 | `GAME_ACTION`         | Anyone (validated by game) | Forwards `{ type, data }` to `game.onMessage(client, type, data)`. |
 

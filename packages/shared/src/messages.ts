@@ -10,6 +10,7 @@ export const MSG = {
   RESTART_GAME: "restart_game",
   RETURN_TO_LOBBY: "return_to_lobby",
   APPOINT_HOST: "appoint_host",
+  KICK_PLAYER: "kick_player",
 
   // Generic
   CHAT: "chat",
@@ -19,6 +20,15 @@ export const MSG = {
   // top-level Colyseus message types.
   GAME_ACTION: "game_action",
 } as const;
+
+/**
+ * WebSocket close codes the server uses to signal *why* a client was
+ * disconnected. 4000–4999 is reserved by the WS spec for application use.
+ * The client checks the code in its `room.onLeave` handler so it can clear
+ * the persisted session for terminal kicks (vs. flaky-network drops, where
+ * the session must be preserved for the reconnect window).
+ */
+export const LEAVE_CODE_KICKED = 4000;
 
 export type MsgType = (typeof MSG)[keyof typeof MSG];
 
@@ -36,6 +46,10 @@ export interface GameActionPayload {
 }
 
 export interface AppointHostPayload {
+  sessionId: string;
+}
+
+export interface KickPlayerPayload {
   sessionId: string;
 }
 
