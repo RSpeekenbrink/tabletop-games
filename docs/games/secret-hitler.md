@@ -159,13 +159,14 @@ triggers the `hitler-executed` win for liberals.
 - **Client** (`packages/client/src/games/secret-hitler/`)
   - `index.tsx` - registers the module and its `setupRoomHandlers` so
     private messages are caught the instant they arrive.
-  - `GameComponent.tsx` - composes the 3D scene and 2D overlay.
+  - `GameComponent.tsx` - composes the responsive 2D layout (header,
+    board, players, log, role card, action panel).
   - `useSHState.ts` - snapshot hook over `room.state.secretHitler`.
   - `privateInfo.ts` - zustand store for role, hands, peek, investigate.
-  - `scene/` - 3D pieces (policy tracks, election tracker, deck piles,
-    podiums).
-  - `ui/` - React overlay (header, player list, action panel, role
-    card, game log, game-over panel).
+  - `ui/` - React components: header, 2D board (policy tracks +
+    election-tracker pips + deck counts), player list, action panel
+    (sticky bottom sheet on mobile), private role card, game log,
+    game-over panel.
 
 ### Public vs. private state
 

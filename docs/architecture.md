@@ -8,7 +8,7 @@ The server is authoritative; the client is a thin renderer.
 ```
                     Browser (one per player)
         ┌─────────────────────────────────────────────────┐
-        │  React (Vite) + react-three-fiber + drei        │
+        │  React (Vite) — responsive 2D UI (desktop + mobile) │
         │  Screens: Landing / Lobby / GameView            │
         │  Client game registry: Component per game       │
         │  Private info store (zustand): role, hand, peek │
@@ -32,7 +32,7 @@ tabletop-games/
 │   ├── shared/   # Pure TS + @colyseus/schema. Types, message constants,
 │   │             # schemas. Imported by both server and client.
 │   ├── server/   # Node + Express + Colyseus. Static-serves the client.
-│   └── client/   # React + Vite + react-three-fiber.
+│   └── client/   # React + Vite SPA.
 ├── Dockerfile    # Multi-stage: build all → runtime image serves both.
 ├── docker-compose.yml
 └── tsconfig.base.json
@@ -80,7 +80,8 @@ The authoritative game state and rules:
 
 ### `packages/client`
 
-A React app with a 3D scene and 2D overlay:
+A React app with a responsive 2D UI that adapts between desktop and
+mobile (portrait) layouts:
 
 - **Routing.** Three screens (Landing, Lobby, GameView). Navigation is driven
   by `state.phase`: `lobby` shows Lobby, `in-game` or `post-game` shows

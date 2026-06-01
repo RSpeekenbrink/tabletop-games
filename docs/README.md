@@ -9,9 +9,9 @@ Technical documentation for the Tabletop Games platform.
   client is responsible for, and how the two communicate.
 - [Server internals](server.md) - Colyseus + Express, the `TabletopRoom`, the
   server-side game registry, reconnection, and HTTP endpoints.
-- [Client internals](client.md) - React + Vite + react-three-fiber, screen
-  routing, the Colyseus client wrapper, the room store, and the client-side
-  game registry.
+- [Client internals](client.md) - React + Vite SPA, screen routing, the
+  Colyseus client wrapper, the room store, and the client-side game
+  registry.
 - [Adding a game](adding-a-game.md) - How to wire a new game into the
   platform. Each game lives in three sibling folders (shared/server/client)
   and registers itself in two registries.

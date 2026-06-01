@@ -27,8 +27,7 @@ packages/
     ├── useYGState.ts   # state snapshot hook
     ├── privateInfo.ts  # zustand store for hidden info (optional)
     ├── assets/         # cards/, board/, icons/, ... (see assets.md)
-    ├── scene/          # react-three-fiber pieces
-    └── ui/             # React overlay components
+    └── ui/             # React components (header, board, panels, ...)
 ```
 
 Use the Secret Hitler module as a reference.
@@ -191,18 +190,25 @@ Drop card art, board textures, role icons, etc. under
 `packages/client/src/games/your-game/assets/`, grouped by kind
 (`cards/`, `board/`, `icons/`, …). Import them with relative paths so
 Vite hashes and validates them at build time. See
-[assets.md](assets.md) for the full convention (including the
-`useTexture` pattern for Three.js meshes).
+[assets.md](assets.md) for the full convention.
 
 ### React UI
 
-Standard React + CSS, with `react-three-fiber` for any 3D scene parts.
-Use the existing `Table` from `packages/client/src/three/Table.tsx` or
-build your own.
+Standard React + CSS. The platform's UI is plain 2D — no 3D scaffolding
+is wired in. The `react-three-fiber` / `three` deps are not installed;
+if your game wants a 3D scene, add them to
+`packages/client/package.json` and mount a `<Canvas>` inside your
+`GameComponent`.
 
-The overlay is a `<div className="game-overlay">` or a custom grid layout.
-Set `pointer-events: none` on the outer wrapper and `auto` on interactive
-children so canvas controls (orbit drag) still work through empty regions.
+The expected layout is a top header + content sections + a sticky-bottom
+action panel on mobile. The Secret Hitler module
+(`packages/client/src/games/secret-hitler/`) is the reference: copy its
+`GameComponent.tsx` structure (`<Header/>`, `<main className="sh-content">`
+with `<section className="sh-section sh-section-*">` children, and a
+sibling `<div className="sh-actions">`) and rename the classes for your
+game. The corresponding responsive grid + bottom-sheet rules in
+`styles.css` show how `max-width: 899px` collapses the desktop grid to a
+single column and pins the action panel to the bottom.
 
 ### Top-level component
 

@@ -28,7 +28,7 @@ Three locations, three roles:
 |------------------------------------------|---------------------------------------------------|-----------------------------------------------|
 | `assets/` (repo root)                    | Design originals, raw exports, oversized masters  | Nothing at runtime — humans only              |
 | `packages/client/src/assets/`            | App-shell visuals: logo, branding, generic icons  | Code in `packages/client/src/` (non-game)     |
-| `packages/client/src/games/<id>/assets/` | Card faces, board textures, role icons, game SFX  | Only that game's components / Three.js scene  |
+| `packages/client/src/games/<id>/assets/` | Card faces, board textures, role icons, game SFX  | Only that game's React components              |
 
 The repo-root `assets/` is the un-optimised vault. When the client needs
 a file, **copy it** into the right package folder (resized / compressed /
@@ -63,38 +63,6 @@ Benefits over `public/`-style absolute URLs:
 The TypeScript module declarations for these file types come from
 `vite/client`, which is already in `packages/client/tsconfig.json` →
 `compilerOptions.types`. No extra `.d.ts` needed.
-
-## Three.js textures
-
-`react-three-fiber` / `three`'s loaders take URL strings, so the same
-import works. Use `useTexture` from `@react-three/drei` (or the raw
-`TextureLoader`) with the imported URL:
-
-```tsx
-import { useTexture } from "@react-three/drei";
-import liberalCardUrl from "../assets/cards/liberal.png";
-
-export function LiberalCard() {
-  const tex = useTexture(liberalCardUrl);
-  return (
-    <mesh>
-      <planeGeometry args={[1, 1.4]} />
-      <meshStandardMaterial map={tex} />
-    </mesh>
-  );
-}
-```
-
-For a whole atlas of card art, pre-load them in one call so the scene
-doesn't pop in card-by-card:
-
-```tsx
-const cards = useTexture({
-  liberal: liberalUrl,
-  fascist: fascistUrl,
-  back: cardBackUrl,
-});
-```
 
 ## Game-specific assets
 

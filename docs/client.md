@@ -1,8 +1,8 @@
 # Client internals
 
-`packages/client` is a React + Vite SPA. Three.js scenes are rendered with
-`react-three-fiber`; the UI overlay is plain React with a small CSS
-stylesheet. State synchronisation is handled by `colyseus.js`.
+`packages/client` is a React + Vite SPA with a responsive 2D UI that
+works on desktop and mobile (portrait). State synchronisation is handled
+by `colyseus.js`.
 
 ## Boot
 
@@ -143,42 +143,56 @@ validate them:
 
 The repo-root `assets/` folder holds design originals; consumed copies
 are dropped into the appropriate package folder. See
-[assets.md](assets.md) for the full convention and Three.js texture
-pattern.
+[assets.md](assets.md) for the full convention.
 
-## Three.js scenes
+## Responsive layout
 
-`src/three/Scene.tsx` and `src/three/Table.tsx` are reusable building
-blocks. Each game's scene composes them.
+The UI uses one component tree with CSS-driven responsive behaviour — no
+device sniffing, no separate mobile bundle. The breakpoint is
+`max-width: 899px` for game layouts and `max-width: 720px` for the
+lobby.
 
-Secret Hitler's scene lives in `src/games/secret-hitler/scene/`:
+**Desktop** (≥ 900px): CSS Grid with named template areas. For Secret
+Hitler that's a three-column layout: `players | board + role + actions
+| log`.
 
-- `Scene.tsx` - `<Canvas>` with camera, lights, orbit controls, and the
-  composed elements below.
-- `Table.tsx` - reused round table.
-- `PolicyTrack.tsx` - one bar of 5 (liberal) or 6 (fascist) slots.
-- `ElectionTracker.tsx` - three spheres at the table centre.
-- `DeckPiles.tsx` - draw and discard pile heights scaled by card count.
-- `Podiums.tsx` - one short cylinder per seat around a circle, coloured
-  by President / Chancellor / dead / alive.
+**Mobile** (< 900px portrait): the same sections stack vertically inside
+a scrollable column, and the `ActionPanel` is lifted to
+`position: fixed; bottom: 0` so it stays in thumb reach as a bottom
+sheet (the Hearthstone / Among Us pattern). Bottom padding on the
+content column reserves space so nothing scrolls under the sheet.
 
-Player names are rendered in the React overlay's player list rather than
-inside the canvas, so we don't depend on a runtime-loaded WebGL font.
+Other mobile considerations baked into `styles.css`:
 
-## React overlay
+- All interactive controls have `min-height: 44px` (Apple HIG tap
+  target) and `touch-action: manipulation` to suppress double-tap zoom.
+- Inputs use `font-size: 16px` so iOS doesn't auto-zoom on focus.
+- Layout heights use `100dvh` (dynamic viewport height) where supported
+  so the URL bar showing/hiding doesn't cause re-layout jumps.
+- Safe-area insets (`env(safe-area-inset-bottom)`) pad the sticky
+  bottom sheet on notched devices.
+- `overscroll-behavior-y: none` on `body` prevents page-bounce
+  fighting the bottom sheet on iOS.
 
-The 2D UI overlay is grid-laid on top of the canvas
-(`pointer-events: none` on the overlay, `auto` on its children so clicks
-don't propagate through). For Secret Hitler:
+## Secret Hitler UI
 
-| Region                | Component               | What it shows |
-|-----------------------|-------------------------|---------------|
-| Top bar               | `Header`                | Phase label, policy counts, election tracker, deck counts, current President / Chancellor. |
-| Left column           | `PlayerList`            | Each player with badges: President, Chancellor, voted, investigated, dead, known role. |
-| Centre column         | `ActionPanel`           | Phase-driven action UI: nomination dropdown, Ja/Nein buttons, policy cards, executive-power pickers, peek result, veto prompt. |
-| Centre column         | `PrivateRoleCard`       | Your role and known allies. Only rendered when the server has sent your role. |
-| Right column          | `GameLog`               | Scrolling log of public events. Mirrors `state.gameLog`. |
-| Floating              | `GameOverPanel`         | Winner, reason, and host-only "Play again" / "Back to lobby" buttons. Shown when `gamePhase === "game-over"`. |
+The SH module composes a small set of plain-React components — no
+canvas, no 3D. Each lives in `src/games/secret-hitler/ui/`:
+
+| Component         | Role |
+|-------------------|------|
+| `Header`          | Phase label, policy counts, election-tracker count, deck counts, current President / Chancellor, host-only "Cancel game" button. |
+| `Board`           | 2D board: liberal track (5 card slots), fascist track (6 card slots), election-tracker pips, draw/discard counts. Pure CSS — slots are `aspect-ratio: 5/7` rectangles that fill in as policies are enacted. |
+| `PlayerList`      | One row per seat with badges: President (P), Chancellor (C), voted, investigated, dead (✕), offline, plus revealed/known role. |
+| `ActionPanel`     | Phase-driven action UI: nomination picker, Ja/Nein vote buttons, policy cards, executive-power pickers, peek result, veto prompt. Empty (and hidden) when there's nothing for any player to do. |
+| `PrivateRoleCard` | Your role, known allies, and the last investigate result. Only rendered when the server has sent your role. |
+| `GameLog`         | Scrolling log of public events. Mirrors `state.gameLog`. |
+| `GameOverPanel`   | Winner, reason, and host-only "Play again" / "Back to lobby" buttons. Rendered as a centered floating card when `gamePhase === "game-over"`. |
+
+The `Board` is intentionally information-equivalent to the header
+counts — the counts give you the number, the board gives you the
+spatial intuition. We could remove one or the other; keeping both
+matches the physical game's affordances.
 
 ## Client game registry
 
