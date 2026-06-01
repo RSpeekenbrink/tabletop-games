@@ -20,6 +20,9 @@ import {
   shuffle,
 } from "./rules.js";
 
+/** How long failed-vote ja/nein tokens stay revealed before the table resets. */
+const ELECTION_REVEAL_MS = 3500;
+
 export class SecretHitlerInstance implements GameInstance {
   private room: TabletopRoom;
   private roles = new Map<string, Role>();
@@ -252,7 +255,15 @@ export class SecretHitlerInstance implements GameInstance {
       sh.lastChancellorSessionId = sh.chancellorSessionId;
       sh.electionTracker = 0;
       this.startLegislativePresident();
-    } else {
+      return;
+    }
+
+    // Vote failed. Hold the revealed ja/nein tokens on the table briefly so
+    // players can see how everyone voted, then reset for the consequence.
+    // (startNomination / enactPolicy clear votes + votesRevealed.)
+    this.room.clock.setTimeout(() => {
+      // Bail if the game was disposed or moved on while we waited.
+      if (this.state !== sh || sh.gamePhase !== "election") return;
       sh.electionTracker += 1;
       if (sh.electionTracker >= 3) {
         this.log("Election tracker reached 3 — top policy auto-enacted.");
@@ -262,7 +273,7 @@ export class SecretHitlerInstance implements GameInstance {
         this.advancePresident();
         this.startNomination();
       }
-    }
+    }, ELECTION_REVEAL_MS);
   }
 
   private startLegislativePresident(): void {
