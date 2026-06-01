@@ -10,6 +10,10 @@ import {
 import { registerClientGame } from "../registry.js";
 import { SecretHitlerGame } from "./GameComponent.js";
 import { usePrivateInfo } from "./privateInfo.js";
+// Game-scoped CSS — Vite collects this into the main bundle so we don't
+// need a separate <link> tag. Keeping SH styles next to SH code means
+// adding a new game doesn't bloat the platform's global stylesheet.
+import "./secret-hitler.css";
 
 /**
  * Register handlers for SH's server-pushed private messages. Called from
