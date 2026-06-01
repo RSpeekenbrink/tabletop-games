@@ -6,6 +6,7 @@ export interface SHPlayerView {
   sessionId: string;
   username: string;
   connected: boolean;
+  disconnectedAt: number;
   alive: boolean;
   investigated: boolean;
   votedThisRound: boolean;
@@ -50,6 +51,7 @@ function snapshot(root: LobbyState | undefined): SHSnapshot | null {
       sessionId: p.sessionId,
       username: p.username,
       connected: p.connected,
+      disconnectedAt: p.disconnectedAt,
       alive: p.alive,
       investigated: p.investigated,
       votedThisRound: p.votedThisRound,

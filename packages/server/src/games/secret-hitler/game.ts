@@ -81,6 +81,15 @@ export class SecretHitlerInstance implements GameInstance {
     // No async resources held.
   }
 
+  onPlayerDisconnect(client: Client): void {
+    // Reconnect window is still open — mirror offline state so the SH UI
+    // can gray the seat and tick a countdown. Do NOT eliminate here.
+    const p = this.state?.shPlayers.get(client.sessionId);
+    if (!p) return;
+    p.connected = false;
+    p.disconnectedAt = Date.now();
+  }
+
   onPlayerLeave(client: Client, _consented: boolean): void {
     const sh = this.state;
     if (!sh) return;
@@ -125,7 +134,10 @@ export class SecretHitlerInstance implements GameInstance {
     const sh = this.state;
     if (!sh) return;
     const p = sh.shPlayers.get(client.sessionId);
-    if (p) p.connected = true;
+    if (p) {
+      p.connected = true;
+      p.disconnectedAt = 0;
+    }
 
     const role = this.roles.get(client.sessionId);
     if (role) {

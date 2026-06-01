@@ -45,7 +45,7 @@ populated and sets `phase = "post-game"` so the result UI stays visible.
 |-------------|-----------|
 | `onCreate`  | Builds initial `LobbyState`. Generates a 4-character shortcode (`A-Z` minus ambiguous letters + `2-9`), stores it both on state and in `room.setMetadata`. Registers all message handlers. |
 | `onJoin`    | Adds a `PlayerSchema` to `state.players`. First joiner becomes the host. Throws if `phase === "in-game"` so mid-game joins are rejected. |
-| `onLeave`   | If `consented`, removes the player from the lobby (or, mid-game, hands off to the `GameInstance` to record an elimination). If unconsented, `await this.allowReconnection(client, 60)`; on success, mark reconnected and call `game.onPlayerRejoin`; on timeout, run the same elimination/removal path as a consented leave. |
+| `onLeave`   | Marks the player offline (`connected = false`). If `consented`, immediately removes the player (or, mid-game, hands off to the `GameInstance` to record an elimination). If unconsented, `await this.allowReconnection(client, 60)`: on success, mark reconnected and call `game.onPlayerRejoin`; on timeout, run the same removal/elimination path as a consented leave. Host badge stays put during the reconnect window — it only moves once the seat is actually removed (or the game records an elimination), so a flaky network doesn't churn the host. |
 | `onDispose` | Disposes the active `GameInstance`. |
 
 ### Message handlers
@@ -90,11 +90,23 @@ stays in sync with whatever the server has registered.
 interface GameInstance {
   onStart(): void | Promise<void>;
   onMessage(client: Client, type: string, payload: unknown): void;
+  onPlayerDisconnect?(client: Client): void; // optional
   onPlayerLeave(client: Client, consented: boolean): void;
   onPlayerRejoin(client: Client): void;
   dispose(): void;
 }
 ```
+
+The optional `onPlayerDisconnect` fires the moment a WebSocket drops
+(before the reconnect window starts). Use it to mirror offline state
+into the game's per-player schema so the in-game UI can gray the seat
+out and tick a kick countdown — but don't eliminate yet; that's
+`onPlayerLeave`'s job after the window expires. The base
+`PlayerSchema.disconnectedAt` (epoch ms) is set by `TabletopRoom` and
+re-stamped by games that want to mirror it onto their own player rows.
+The reconnect window length is exported as
+`RECONNECT_SECONDS` from `@tabletop-games/shared` so the client can
+render countdowns without hard-coding the duration.
 
 A game instance owns:
 
