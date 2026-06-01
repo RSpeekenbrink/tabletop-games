@@ -136,9 +136,10 @@ export function PromptStrip({ state, room, mySessionId }: Props) {
         );
       } else if (power === "investigate") {
         body = priv.investigateResult ? (
-          <span>
+          <span className="sh3d-prompt-row">
             <b>{name(priv.investigateResult.targetSessionId)}</b> is a{" "}
             <b>{priv.investigateResult.party}</b>.
+            <button onClick={() => actions.acknowledgePeek()}>OK</button>
           </span>
         ) : (
           <span>Tap a glowing player to investigate their party.</span>

@@ -8,6 +8,7 @@ import { useCardTexture } from "./useCardTexture.js";
 import {
   roleCardCell,
   partyCellForRole,
+  partyCell,
   policyCell,
   VOTE_CELLS,
   type SheetId,
@@ -104,6 +105,20 @@ export function LocalHand({ state, mySessionId, username, actions, ref }: Props)
         isPres &&
         state.pendingExecutivePower === "peek" &&
         priv.peekResult && <PolicyRow cards={priv.peekResult} />}
+
+      {/* Executive investigate: reveal the chosen player's party card. */}
+      {state.gamePhase === "executive-action" &&
+        isPres &&
+        state.pendingExecutivePower === "investigate" &&
+        priv.investigateResult && (
+          <HandCard
+            sheet="party"
+            cell={partyCell(priv.investigateResult.party)}
+            width={0.72}
+            position={[0, -0.72, -2.2]}
+            rotation={[0.2, 0, 0]}
+          />
+        )}
     </group>
   );
 }

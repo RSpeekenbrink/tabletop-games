@@ -21,7 +21,7 @@ import {
 } from "./rules.js";
 
 /** How long ja/nein tokens stay revealed (pass or fail) before play continues. */
-const ELECTION_REVEAL_MS = 15000;
+const ELECTION_REVEAL_MS = 7000;
 
 export class SecretHitlerInstance implements GameInstance {
   private room: TabletopRoom;
@@ -367,6 +367,8 @@ export class SecretHitlerInstance implements GameInstance {
     if (sh.gamePhase !== "executive-action") return;
     if (sh.pendingExecutivePower !== "investigate") return;
     if (client.sessionId !== sh.presidentSessionId) return;
+    // Only one investigation per power — ignore further taps once a target is set.
+    if (sh.executivePowerTargetSessionId) return;
     if (!targetSid || targetSid === client.sessionId) return;
     if (!this.isAlive(targetSid)) return;
     const target = sh.shPlayers.get(targetSid);
@@ -381,7 +383,8 @@ export class SecretHitlerInstance implements GameInstance {
     this.log(
       `${this.username(client.sessionId)} investigated ${this.username(targetSid)}.`,
     );
-    this.finishExecutivePower();
+    // Stay in executive-action so the President can read the party card; the
+    // power finishes once they acknowledge (mirrors the Policy Peek flow).
   }
 
   private handleExecute(client: Client, targetSid: string): void {
@@ -423,9 +426,14 @@ export class SecretHitlerInstance implements GameInstance {
   private handleAcknowledgePeek(client: Client): void {
     const sh = this.state!;
     if (sh.gamePhase !== "executive-action") return;
-    if (sh.pendingExecutivePower !== "peek") return;
     if (client.sessionId !== sh.presidentSessionId) return;
-    this.finishExecutivePower();
+    // Peek can be acknowledged immediately; investigate only after a target
+    // has actually been chosen (so its result has been delivered).
+    if (sh.pendingExecutivePower === "peek") {
+      this.finishExecutivePower();
+    } else if (sh.pendingExecutivePower === "investigate" && sh.executivePowerTargetSessionId) {
+      this.finishExecutivePower();
+    }
   }
 
   private finishExecutivePower(): void {
