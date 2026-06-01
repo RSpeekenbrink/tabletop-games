@@ -177,12 +177,18 @@ function Seat({
   );
 }
 
-/** Ja/nein card laid flat on the table in front of a seat once votes reveal. */
+/**
+ * A vote card laid flat on the table in front of a seat. While the election is
+ * still open it sits face-down once that player has cast a vote; when votes
+ * reveal it flips to show their ja/nein.
+ */
 function SeatVoteToken({ seat, state }: { seat: SeatLayout; state: SHSnapshot }) {
   const vote = state.votes.get(seat.player.sessionId);
-  const show = state.votesRevealed && !!vote;
-  const cell = vote === "ja" ? VOTE_CELLS.ja : VOTE_CELLS.nein;
-  const tex = useCardTexture("vote", show ? cell : VOTE_CELLS.back);
+  const revealed = state.votesRevealed && !!vote;
+  const facedown = state.gamePhase === "election" && seat.player.votedThisRound;
+  const show = revealed || facedown;
+  const cell = revealed ? (vote === "ja" ? VOTE_CELLS.ja : VOTE_CELLS.nein) : VOTE_CELLS.back;
+  const tex = useCardTexture("vote", cell);
   if (!show) return null;
   // Lay the card flat on the table, set in from the seat toward the centre.
   const len = Math.hypot(seat.x, seat.z) || 1;
