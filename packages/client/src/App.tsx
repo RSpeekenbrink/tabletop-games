@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import type { LobbyState } from "@tabletop-games/shared";
+import { LEAVE_CODE_KICKED, type LobbyState } from "@tabletop-games/shared";
 import { colyseusClient } from "./net/colyseusClient.js";
 import { clearSession, getSession, setSession } from "./net/session.js";
 import { useRoomStore } from "./net/roomStore.js";
@@ -72,7 +72,11 @@ export function App() {
   // calling room.leave(true).
   useEffect(() => {
     if (!room) return;
-    const onLeaveHandler = () => {
+    const onLeaveHandler = (code: number) => {
+      // Terminal leaves (kick, server disposal) must wipe the persisted
+      // session — otherwise the next page load reconnect-loops on a stale
+      // token. Soft drops (network) preserve it for the reconnect window.
+      if (code === LEAVE_CODE_KICKED) clearSession();
       setRoom(null);
       navigate("/", { replace: true });
     };
