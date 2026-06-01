@@ -6,6 +6,7 @@ import type { Room } from "colyseus.js";
 import { useRoomStore } from "../net/roomStore.js";
 import { useLobbyState } from "../net/useLobbyState.js";
 import { clearSession } from "../net/session.js";
+import { Avatar } from "../ui/Avatar.js";
 import logoUrl from "../assets/branding/tabletop_games.png";
 
 export function Lobby() {
@@ -118,9 +119,12 @@ export function Lobby() {
           const showMenu = isHost && !isSelf;
           return (
             <div key={p.sessionId} className="player-row">
-              <span>
-                {p.username}
-                {isSelf ? " (you)" : ""}
+              <span className="player-identity">
+                <Avatar seed={p.username} size={32} />
+                <span>
+                  {p.username}
+                  {isSelf ? " (you)" : ""}
+                </span>
               </span>
               <span className="row" style={{ gap: "0.25rem" }}>
                 {isThisHost && <span className="badge host">host</span>}
