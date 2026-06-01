@@ -206,9 +206,26 @@ action panel on mobile. The Secret Hitler module
 `GameComponent.tsx` structure (`<Header/>`, `<main className="sh-content">`
 with `<section className="sh-section sh-section-*">` children, and a
 sibling `<div className="sh-actions">`) and rename the classes for your
-game. The corresponding responsive grid + bottom-sheet rules in
-`styles.css` show how `max-width: 899px` collapses the desktop grid to a
-single column and pins the action panel to the bottom.
+game.
+
+### Game-scoped CSS
+
+Put your game's styles in
+`packages/client/src/games/your-game/your-game.css` and import them from
+`index.tsx`:
+
+```ts
+import "./your-game.css";
+```
+
+Vite collects the import into the main bundle, so no extra `<link>` tag
+is needed. The global `src/styles.css` only carries platform-level rules
+(layout primitives, lobby, avatars, base badges, theme tokens); anything
+specific to one game lives next to its code. The SH stylesheet
+(`games/secret-hitler/secret-hitler.css`) is the reference and shows the
+responsive grid + sticky bottom-sheet pattern: `max-width: 899px`
+collapses the desktop grid to a single column and pins the action panel
+to the bottom.
 
 ### Top-level component
 
