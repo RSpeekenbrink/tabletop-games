@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Html } from "@react-three/drei";
 import { Avatar } from "../../../ui/Avatar.js";
 import type { SHSnapshot, SHPlayerView } from "../useSHState.js";
+import { usePrivateInfo } from "../privateInfo.js";
 import { tappableSeats, type SHActions } from "./useSHActions.js";
 import { Card } from "./cardGeometry.js";
 import { useCardTexture } from "./useCardTexture.js";
@@ -27,6 +28,12 @@ interface Props {
 export function Seats({ state, mySessionId, actions }: Props) {
   const seats = useSeatLayout(state, mySessionId);
   const tappable = tappableSeats(state, mySessionId);
+  // Roles we secretly know (fellow fascists / Hitler) — shown as a seat badge.
+  const knownAllies = usePrivateInfo((s) => s.knownAllies);
+  const allyRoles = useMemo(
+    () => new Map(knownAllies.map((a) => [a.sessionId, a.role])),
+    [knownAllies],
+  );
 
   const onSeatClick = (sid: string) => {
     if (!tappable.has(sid)) return;
@@ -49,6 +56,7 @@ export function Seats({ state, mySessionId, actions }: Props) {
           seat={seat}
           state={state}
           mySessionId={mySessionId}
+          allyRole={allyRoles.get(seat.player.sessionId)}
           tappable={tappable.has(seat.player.sessionId)}
           onClick={() => onSeatClick(seat.player.sessionId)}
         />
@@ -86,12 +94,14 @@ function Seat({
   seat,
   state,
   mySessionId,
+  allyRole,
   tappable,
   onClick,
 }: {
   seat: SeatLayout;
   state: SHSnapshot;
   mySessionId: string;
+  allyRole?: "fascist" | "hitler";
   tappable: boolean;
   onClick: () => void;
 }) {
@@ -148,6 +158,7 @@ function Seat({
           <div className="sh3d-seat-tags">
             {isPres && <span className="sh3d-tag pres">President</span>}
             {isChan && <span className="sh3d-tag chan">Chancellor</span>}
+            {allyRole && <span className={`sh3d-tag role-${allyRole}`}>{allyRole}</span>}
             {!player.alive && <span className="sh3d-tag dead">✕ dead</span>}
             {player.alive && !player.connected && <span className="sh3d-tag off">offline</span>}
             {player.votedThisRound && state.gamePhase === "election" && (
@@ -160,16 +171,22 @@ function Seat({
   );
 }
 
-/** Floating ja/nein card above a seat once votes are revealed. */
+/** Ja/nein card laid flat on the table in front of a seat once votes reveal. */
 function SeatVoteToken({ seat, state }: { seat: SeatLayout; state: SHSnapshot }) {
   const vote = state.votes.get(seat.player.sessionId);
   const show = state.votesRevealed && !!vote;
   const cell = vote === "ja" ? VOTE_CELLS.ja : VOTE_CELLS.nein;
   const tex = useCardTexture("vote", show ? cell : VOTE_CELLS.back);
   if (!show) return null;
+  // Lay the card flat on the table, set in from the seat toward the centre.
+  const len = Math.hypot(seat.x, seat.z) || 1;
+  const dist = 0.95;
   return (
-    <group position={[0, 0.45, 0.35]} rotation={[-Math.PI / 3, 0, 0]}>
-      <Card front={tex} width={0.34} />
+    <group
+      position={[(-seat.x / len) * dist, 0.03, (-seat.z / len) * dist]}
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      <Card front={tex} width={0.38} />
     </group>
   );
 }

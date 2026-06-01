@@ -83,8 +83,6 @@ interface CardProps {
   width?: number;
   position?: [number, number, number];
   rotation?: [number, number, number];
-  /** Glow to signal the card is tappable. */
-  highlight?: boolean;
   onClick?: (e: ThreeEvent<MouseEvent>) => void;
 }
 
@@ -99,19 +97,14 @@ export function Card({
   width = CARD_WIDTH,
   position,
   rotation,
-  highlight = false,
   onClick,
 }: CardProps) {
   const geometry = useMemo(() => cardGeometry(width), [width]);
   const materials = useMemo(() => {
     const face = new THREE.MeshStandardMaterial({ map: front, roughness: 0.55 });
     const edge = new THREE.MeshStandardMaterial({ color: "#f0f0f0", roughness: 0.85 });
-    face.emissive = new THREE.Color("#ffd34d");
     return [face, edge];
   }, [front]);
-
-  // Toggle the highlight glow without rebuilding materials.
-  materials[0].emissiveIntensity = highlight ? 0.45 : 0;
 
   return (
     <mesh

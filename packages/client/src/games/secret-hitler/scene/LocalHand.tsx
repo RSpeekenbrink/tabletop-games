@@ -75,7 +75,6 @@ export function LocalHand({ state, mySessionId, username, actions }: Props) {
             position={[-0.55, -0.7, -2.2]}
             rotation={[0.2, 0, 0]}
             onClick={() => actions.vote("ja")}
-            highlight
           />
           <HandCard
             sheet="vote"
@@ -84,7 +83,6 @@ export function LocalHand({ state, mySessionId, username, actions }: Props) {
             position={[0.55, -0.7, -2.2]}
             rotation={[0.2, 0, 0]}
             onClick={() => actions.vote("nein")}
-            highlight
           />
         </>
       )}
@@ -139,7 +137,6 @@ function PolicyRow({
           position={[(i - (n - 1) / 2) * 0.85, -0.72, -2.2]}
           rotation={[0.2, 0, 0]}
           onClick={onPick ? () => onPick(i) : undefined}
-          highlight={!!onPick}
         />
       ))}
     </>
@@ -156,7 +153,6 @@ function HandCard({
   width?: number;
   position?: [number, number, number];
   rotation?: [number, number, number];
-  highlight?: boolean;
   onClick?: () => void;
 }) {
   const tex = useCardTexture(sheet, cell);
