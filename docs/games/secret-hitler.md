@@ -159,14 +159,51 @@ triggers the `hitler-executed` win for liberals.
 - **Client** (`packages/client/src/games/secret-hitler/`)
   - `index.tsx` - registers the module and its `setupRoomHandlers` so
     private messages are caught the instant they arrive.
-  - `GameComponent.tsx` - composes the responsive 2D layout (header,
-    board, players, log, role card, action panel).
+  - `GameComponent.tsx` - lazy-mounts the 3D board (`scene/SHScene`)
+    full-bleed, with a thin HTML overlay (header, collapsible log,
+    prompt strip) layered on top. Renders a fallback message if WebGL
+    is unavailable.
   - `useSHState.ts` - snapshot hook over `room.state.secretHitler`.
   - `privateInfo.ts` - zustand store for role, hands, peek, investigate.
-  - `ui/` - React components: header, 2D board (policy tracks +
-    election-tracker pips + deck counts), player list, action panel
-    (sticky bottom sheet on mobile), private role card, game log,
-    game-over panel.
+  - `scene/` - the Three.js / react-three-fiber board (see
+    [3D board](#3d-board) below).
+  - `ui/` - the HTML overlay components: `Header`, `GameLog`,
+    `PromptStrip` (status text + non-spatial buttons), `GameOverPanel`.
+
+### 3D board
+
+The board is a Three.js scene rendered with react-three-fiber, replacing
+the original 2D CSS board. It is lazy-loaded (`React.lazy`) so the heavy
+three.js bundle stays out of the lobby/initial chunk. The 3D layer is a
+new front-end only: every action still travels through the same
+`MSG.GAME_ACTION` envelope, so the server contract is unchanged.
+
+Files in `scene/`:
+
+| File | Role |
+|------|------|
+| `textures.ts` | Single source of truth for the art: sprite-sheet grids, each logical card's cell index, the `cellUV()` slicing math, and the tracker / pile / OBJ URLs. |
+| `useCardTexture.ts`, `useObj.ts` | Suspense loaders — a sliced sheet-cell texture, and an OBJ mesh's geometry. |
+| `cardGeometry.tsx` | `<Card>` — a thin extruded rounded-rectangle with a textured face. |
+| `useSHActions.ts` | The single dispatch path (nominate / vote / discard / …) plus the seat-eligibility helpers, shared by the scene and the prompt strip. |
+| `SHScene.tsx` | The `<Canvas>` root: portrait-responsive camera, constrained `OrbitControls`, lighting, Suspense. Default export so it can be `React.lazy`'d. |
+| `Table.tsx` | The felt table. |
+| `Seats.tsx` | Avatars (drei `<Html>`) in a ring rotated so the local player sits at the front; gold / cyan turn highlights; tappable seat pads; revealed vote tokens. |
+| `PolicyTrackers.tsx` | The liberal board plus the per-player-count fascist board (both `tracker.obj`), with enacted-policy markers and election-tracker pips. |
+| `DeckStands.tsx` | Draw + discard stands (`discard_draw_pile.obj`) with live counts. |
+| `LocalHand.tsx` | The local player's role + party cards plus the phase-driven interactive cards (Ja/Nein, policy hand, peek), glued to the camera at bottom-centre. |
+
+Interaction is spatial: tap a glowing seat to nominate / investigate /
+execute / special-elect, tap a card in your hand to vote / discard /
+enact. Non-spatial choices (veto Yes/No, acknowledge peek, propose veto)
+and all status narration live in the HTML `PromptStrip` bottom sheet.
+`PlayerList` and `PrivateRoleCard` remain in `ui/` but are no longer
+mounted — the seated avatars and the in-hand role card replace them.
+
+The card art is rasterised sprite sheets sliced by `textures.ts`. Three's
+UV origin is bottom-left while the sheets are authored top-left, so
+`cellUV` flips the Y axis. See [assets.md](../assets.md) for the texture
+and `.obj` import conventions.
 
 ### Public vs. private state
 
@@ -241,8 +278,8 @@ sender's role for the round. Anything invalid is silently ignored.
         └── fail ─► election tracker++ ─► (tracker == 3? auto-enact) ─► nomination
 ```
 
-`gamePhase` on the schema reflects the active node; the client's
-`ActionPanel` renders a different sub-UI for each.
+`gamePhase` on the schema reflects the active node; the client's 3D
+scene and `PromptStrip` present a different interaction for each.
 
 ### Seat order and the next-President pointer
 

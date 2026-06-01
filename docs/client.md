@@ -1,8 +1,10 @@
 # Client internals
 
-`packages/client` is a React + Vite SPA with a responsive 2D UI that
-works on desktop and mobile (portrait). State synchronisation is handled
-by `colyseus.js`.
+`packages/client` is a React + Vite SPA. The app shell (landing, lobby,
+game scaffolding) is a responsive 2D UI for desktop and mobile
+(portrait); individual games may render their own scene — Secret Hitler
+uses a 3D `react-three-fiber` board. State synchronisation is handled by
+`colyseus.js`.
 
 ## Boot
 
@@ -145,6 +147,11 @@ The repo-root `assets/` folder holds design originals; consumed copies
 are dropped into the appropriate package folder. See
 [assets.md](assets.md) for the full convention.
 
+For 3D games the same `import` rule covers textures (`.png` / `.jpg`
+sprite sheets) and meshes (`.obj`, imported with a `?url` suffix). Secret
+Hitler's `scene/textures.ts` is the one place that maps art files →
+sheet grids, card cells and OBJ URLs.
+
 ## Responsive layout
 
 The UI uses one component tree with CSS-driven responsive behaviour — no
@@ -152,15 +159,13 @@ device sniffing, no separate mobile bundle. The breakpoint is
 `max-width: 899px` for game layouts and `max-width: 720px` for the
 lobby.
 
-**Desktop** (≥ 900px): CSS Grid with named template areas. For Secret
-Hitler that's a three-column layout: `players | board + role + actions
-| log`.
+**App shell**: the lobby uses CSS Grid (2-column on desktop, one column
+under 720px). Games own their own layout.
 
-**Mobile** (< 900px portrait): the same sections stack vertically inside
-a scrollable column, and the `ActionPanel` is lifted to
-`position: fixed; bottom: 0` so it stays in thumb reach as a bottom
-sheet (the Hearthstone / Among Us pattern). Bottom padding on the
-content column reserves space so nothing scrolls under the sheet.
+**Secret Hitler**: a full-bleed 3D canvas with an HTML overlay. The
+`PromptStrip` is pinned to `bottom: 0` as a thumb-reach bottom sheet (the
+Hearthstone / Among Us pattern), and the camera widens its field of view
+in portrait so the whole table fits on a phone.
 
 Other mobile considerations baked into `styles.css`:
 
@@ -176,23 +181,29 @@ Other mobile considerations baked into `styles.css`:
 
 ## Secret Hitler UI
 
-The SH module composes a small set of plain-React components — no
-canvas, no 3D. Each lives in `src/games/secret-hitler/ui/`:
+Secret Hitler renders a 3D board with `@react-three/fiber` + `drei`,
+lazy-loaded so three.js stays out of the lobby/initial bundle. The scene
+lives in `src/games/secret-hitler/scene/` (documented in
+[games/secret-hitler.md](games/secret-hitler.md#3d-board)); a thin HTML
+overlay sits on top for the parts that are better as DOM. Each overlay
+component lives in `src/games/secret-hitler/ui/`:
 
 | Component         | Role |
 |-------------------|------|
-| `Header`          | Phase label, policy counts, election-tracker count, deck counts, current President / Chancellor, host-only "Cancel game" button. |
-| `Board`           | 2D board: liberal track (5 card slots), fascist track (6 card slots), election-tracker pips, draw/discard counts. Pure CSS — slots are `aspect-ratio: 5/7` rectangles that fill in as policies are enacted. |
-| `PlayerList`      | One row per seat with badges: President (P), Chancellor (C), voted, investigated, dead (✕), offline, plus revealed/known role. |
-| `ActionPanel`     | Phase-driven action UI: nomination picker, Ja/Nein vote buttons, policy cards, executive-power pickers, peek result, veto prompt. Empty (and hidden) when there's nothing for any player to do. |
-| `PrivateRoleCard` | Your role, known allies, and the last investigate result. Only rendered when the server has sent your role. |
-| `GameLog`         | Scrolling log of public events. Mirrors `state.gameLog`. |
-| `GameOverPanel`   | Winner, reason, and host-only "Play again" / "Back to lobby" buttons. Rendered as a centered floating card when `gamePhase === "game-over"`. |
+| `Header`          | Top bar: phase label, policy / tracker / deck counts, current President / Chancellor, host-only "Cancel game". |
+| `PromptStrip`     | Bottom sheet: status text plus the non-spatial buttons (veto Yes/No, acknowledge peek, propose veto). Spatial choices are made by tapping cards and seats in the 3D scene. |
+| `GameLog`         | Scrolling public-event log, in a collapsible drawer. Mirrors `state.gameLog`. |
+| `GameOverPanel`   | Winner, reason, host-only "Play again" / "Back to lobby". Centered floating card when `gamePhase === "game-over"`. |
 
-The `Board` is intentionally information-equivalent to the header
-counts — the counts give you the number, the board gives you the
-spatial intuition. We could remove one or the other; keeping both
-matches the physical game's affordances.
+`PlayerList` and `PrivateRoleCard` also live in `ui/` but are no longer
+mounted — the seated avatars (`scene/Seats`) and the in-hand role card
+(`scene/LocalHand`) replace them.
+
+The overlay layer is `pointer-events: none` so taps fall through to the
+canvas; only its actual controls re-enable pointer events. The canvas
+itself sets `touch-action: none` so `OrbitControls` owns touch gestures.
+When WebGL is unavailable the component renders a fallback message
+instead of the canvas.
 
 ## Client game registry
 

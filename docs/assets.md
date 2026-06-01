@@ -64,6 +64,23 @@ The TypeScript module declarations for these file types come from
 `vite/client`, which is already in `packages/client/tsconfig.json` →
 `compilerOptions.types`. No extra `.d.ts` needed.
 
+## Raw URLs with `?url`
+
+For file types Vite doesn't turn into a module by default — e.g.
+Wavefront `.obj` meshes — append `?url` to the import to get the emitted
+URL string:
+
+```ts
+import trackerObjUrl from "../assets/tracker.obj?url";
+const group = useLoader(OBJLoader, trackerObjUrl);
+```
+
+`?url` works for any extension (it also forces the URL form for
+`.png` / `.jpg` when you want the string rather than Vite's default
+module). Secret Hitler's 3D board uses this for its `.obj` files; the
+mapping from every texture / mesh file to its three.js usage lives in
+`packages/client/src/games/secret-hitler/scene/textures.ts`.
+
 ## Game-specific assets
 
 When you add a new game (see [adding-a-game.md](adding-a-game.md)), put

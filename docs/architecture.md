@@ -80,8 +80,9 @@ The authoritative game state and rules:
 
 ### `packages/client`
 
-A React app with a responsive 2D UI that adapts between desktop and
-mobile (portrait) layouts:
+A React app with a responsive UI that adapts between desktop and mobile
+(portrait) layouts. The app shell is 2D; games may render their own
+scene — Secret Hitler uses a 3D react-three-fiber board:
 
 - **Routing.** Three screens (Landing, Lobby, GameView). Navigation is driven
   by `state.phase`: `lobby` shows Lobby, `in-game` or `post-game` shows
