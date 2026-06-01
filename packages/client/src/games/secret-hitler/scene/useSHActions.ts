@@ -68,6 +68,11 @@ export function tappableSeats(state: SHSnapshot, mySessionId: string): Set<strin
   }
   if (state.gamePhase === "executive-action" && isPres) {
     const power = state.pendingExecutivePower;
+    // Investigation is a one-shot: once a target is chosen the result card is
+    // shown and the President only needs to acknowledge — no more tapping.
+    if (power === "investigate" && state.executivePowerTargetSessionId) {
+      return new Set();
+    }
     if (power === "investigate" || power === "execute" || power === "special-election") {
       return executiveEligible(state, mySessionId);
     }
