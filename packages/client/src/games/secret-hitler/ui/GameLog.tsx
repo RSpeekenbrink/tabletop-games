@@ -8,7 +8,7 @@ export function GameLog({ state }: { state: SHSnapshot }) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [state.gameLog.length]);
   return (
-    <div className="sh-log">
+    <>
       <h3>Log</h3>
       <div className="sh-log-list" ref={listRef}>
         {state.gameLog.map((line, i) => (
@@ -17,6 +17,6 @@ export function GameLog({ state }: { state: SHSnapshot }) {
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }

@@ -11,7 +11,7 @@ export function PlayerList({ state, mySessionId }: Props) {
   const allyRoles = new Map(priv.knownAllies.map((a) => [a.sessionId, a.role]));
 
   return (
-    <div className="sh-players">
+    <>
       <h3>Players</h3>
       {state.players.map((p) => {
         const isPres = p.sessionId === state.presidentSessionId;
@@ -46,6 +46,6 @@ export function PlayerList({ state, mySessionId }: Props) {
           </div>
         );
       })}
-    </div>
+    </>
   );
 }
