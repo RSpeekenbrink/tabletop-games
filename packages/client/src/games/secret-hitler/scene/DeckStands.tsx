@@ -1,3 +1,4 @@
+import { type RefObject } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import type { SHSnapshot } from "../useSHState.js";
@@ -18,6 +19,8 @@ const MAX_STACK = 17;
 
 interface Props {
   state: SHSnapshot;
+  /** Hand-card group used to occlude the deck chips when behind a card. */
+  occluder: RefObject<THREE.Object3D>;
 }
 
 /**
@@ -25,7 +28,7 @@ interface Props {
  * with a physical stack of face-down policy cards on top whose height tracks
  * the live count. The discard tray is flipped so its plain back faces up.
  */
-export function DeckStands({ state }: Props) {
+export function DeckStands({ state, occluder }: Props) {
   const geometry = useObjGeometry(OBJ.pile);
   const drawTex = useFullTexture(PILE.draw);
   const discardTex = useFullTexture(PILE.discard);
@@ -40,6 +43,7 @@ export function DeckStands({ state }: Props) {
         x={-1.9}
         label="Draw"
         count={state.drawPileCount}
+        occluder={occluder}
       />
       <Stand
         geometry={geometry}
@@ -48,6 +52,7 @@ export function DeckStands({ state }: Props) {
         x={1.9}
         label="Discard"
         count={state.discardPileCount}
+        occluder={occluder}
         flipped
       />
     </group>
@@ -61,6 +66,7 @@ function Stand({
   x,
   label,
   count,
+  occluder,
   flipped = false,
 }: {
   geometry: THREE.BufferGeometry;
@@ -69,6 +75,7 @@ function Stand({
   x: number;
   label: string;
   count: number;
+  occluder: RefObject<THREE.Object3D>;
   flipped?: boolean;
 }) {
   const cards = Math.min(Math.max(count, 0), MAX_STACK);
@@ -98,6 +105,7 @@ function Stand({
         distanceFactor={9}
         pointerEvents="none"
         zIndexRange={[8, 0]}
+        occlude={[occluder]}
       >
         <div className="sh3d-chip">
           {label} {count}

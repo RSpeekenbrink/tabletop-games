@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, type RefObject } from "react";
+import type * as THREE from "three";
 import { Html } from "@react-three/drei";
 import { Avatar } from "../../../ui/Avatar.js";
 import type { SHSnapshot, SHPlayerView } from "../useSHState.js";
@@ -22,10 +23,12 @@ interface Props {
   state: SHSnapshot;
   mySessionId: string;
   actions: SHActions;
+  /** Hand-card group used to occlude name billboards sitting behind cards. */
+  occluder: RefObject<THREE.Object3D>;
 }
 
 /** Avatars seated in a ring, rotated so the local player sits at the front. */
-export function Seats({ state, mySessionId, actions }: Props) {
+export function Seats({ state, mySessionId, actions, occluder }: Props) {
   const seats = useSeatLayout(state, mySessionId);
   const tappable = tappableSeats(state, mySessionId);
   // Roles we secretly know (fellow fascists / Hitler) — shown as a seat badge.
@@ -59,6 +62,7 @@ export function Seats({ state, mySessionId, actions }: Props) {
           allyRole={allyRoles.get(seat.player.sessionId)}
           tappable={tappable.has(seat.player.sessionId)}
           onClick={() => onSeatClick(seat.player.sessionId)}
+          occluder={occluder}
         />
       ))}
     </group>
@@ -97,6 +101,7 @@ function Seat({
   allyRole,
   tappable,
   onClick,
+  occluder,
 }: {
   seat: SeatLayout;
   state: SHSnapshot;
@@ -104,6 +109,7 @@ function Seat({
   allyRole?: "fascist" | "hitler";
   tappable: boolean;
   onClick: () => void;
+  occluder: RefObject<THREE.Object3D>;
 }) {
   const { player, x, z } = seat;
   const isPres = player.sessionId === state.presidentSessionId;
@@ -152,7 +158,14 @@ function Seat({
       <SeatVoteToken seat={seat} state={state} />
 
       {/* Avatar + name + status as an HTML billboard floating above the pad. */}
-      <Html position={[0, 0.7, 0]} center distanceFactor={9} zIndexRange={[10, 0]} pointerEvents="none">
+      <Html
+        position={[0, 0.7, 0]}
+        center
+        distanceFactor={9}
+        zIndexRange={[10, 0]}
+        pointerEvents="none"
+        occlude={[occluder]}
+      >
         <div className={`sh3d-seat ${!player.alive ? "dead" : ""} ${isMe ? "me" : ""}`}>
           <Avatar seed={player.username} size={44} />
           <div className="sh3d-seat-name">
