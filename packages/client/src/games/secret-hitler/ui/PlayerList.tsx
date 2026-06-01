@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { RECONNECT_SECONDS } from "@tabletop-games/shared";
 import type { SHSnapshot } from "../useSHState.js";
 import { usePrivateInfo } from "../privateInfo.js";
+import { Avatar } from "../../../ui/Avatar.js";
 
 interface Props {
   state: SHSnapshot;
@@ -52,9 +53,12 @@ export function PlayerList({ state, mySessionId }: Props) {
 
         return (
           <div key={p.sessionId} className={rowClasses}>
-            <span className="sh-player-name">
-              {p.username}
-              {p.sessionId === mySessionId ? " (you)" : ""}
+            <span className="player-identity">
+              <Avatar seed={p.username} size={28} />
+              <span className="sh-player-name">
+                {p.username}
+                {p.sessionId === mySessionId ? " (you)" : ""}
+              </span>
             </span>
             <span className="sh-player-badges">
               {isPres && <span className="badge pres">P</span>}
