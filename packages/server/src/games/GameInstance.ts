@@ -11,6 +11,17 @@ import type { TabletopRoom } from "../rooms/TabletopRoom.js";
 export interface GameInstance {
   onStart(): void | Promise<void>;
   onMessage(client: Client, type: string, payload: unknown): void;
+  /**
+   * Called when a player's WebSocket drops. The reconnect window is still
+   * open at this point — mirror the offline state into the game's per-player
+   * schema (so the UI can gray them out / show a kick countdown) but do not
+   * eliminate yet. Optional; default is a no-op.
+   */
+  onPlayerDisconnect?(client: Client): void;
+  /**
+   * Called when the reconnect window has expired (or a consented leave fires).
+   * The game records the elimination / removes the player as appropriate.
+   */
   onPlayerLeave(client: Client, consented: boolean): void;
   onPlayerRejoin(client: Client): void;
   dispose(): void;

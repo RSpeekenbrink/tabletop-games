@@ -3,6 +3,7 @@ import {
   LobbyState,
   MSG,
   PlayerSchema,
+  RECONNECT_SECONDS,
   type SelectGamePayload,
   type ChatPayload,
   type GameActionPayload,
@@ -12,7 +13,6 @@ import {
 import { getGame } from "../games/registry.js";
 import type { GameInstance } from "../games/GameInstance.js";
 
-const RECONNECT_SECONDS = 60;
 const SHORTCODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const SHORTCODE_LENGTH = 4;
 
@@ -129,39 +129,52 @@ export class TabletopRoom extends Room<LobbyState> {
   }
 
   override async onLeave(client: Client, consented: boolean): Promise<void> {
-    const player = this.state.players.get(client.sessionId);
-    if (player) player.connected = false;
-
-    // Hand the host badge over immediately so the lobby keeps working while
-    // the original host is offline. If they reconnect they're back as a
-    // regular player; an explicit APPOINT_HOST can hand it back.
-    if (this.state.hostSessionId === client.sessionId) {
-      this.transferHostFrom(client.sessionId);
-    }
+    const sessionId = client.sessionId;
+    const player = this.state.players.get(sessionId);
+    if (!player) return;
+    player.connected = false;
+    player.disconnectedAt = Date.now();
+    // Let the active game mirror the disconnect into its per-player schema
+    // so the in-game UI can gray the seat out and tick a kick countdown
+    // during the reconnect window.
+    this.game?.onPlayerDisconnect?.(client);
 
     if (consented) {
-      if (this.game && this.state.phase === "in-game") {
-        // Mid-game voluntary leave is an elimination — let the game record it
-        // but keep the seat visible (don't remove from the players map).
-        this.game.onPlayerLeave(client, true);
-      } else {
-        this.removePlayer(client.sessionId);
-      }
+      this.handlePlayerLeft(client, sessionId, true);
       return;
     }
 
+    // Unconsented drop: keep the seat (marked offline) for the reconnect
+    // window. Host stays put during that window — only when the window
+    // expires do we treat them as gone and reassign the host badge.
     try {
       await this.allowReconnection(client, RECONNECT_SECONDS);
-      const rejoined = this.state.players.get(client.sessionId);
-      if (rejoined) rejoined.connected = true;
+      const rejoined = this.state.players.get(sessionId);
+      if (rejoined) {
+        rejoined.connected = true;
+        rejoined.disconnectedAt = 0;
+      }
       this.game?.onPlayerRejoin(client);
     } catch {
-      if (this.game && this.state.phase === "in-game") {
-        this.game.onPlayerLeave(client, false);
+      this.handlePlayerLeft(client, sessionId, false);
+    }
+  }
+
+  private handlePlayerLeft(client: Client, sessionId: string, consented: boolean): void {
+    if (this.game && this.state.phase === "in-game") {
+      // Mid-game departure is an elimination — let the game record it but
+      // keep the seat visible (don't remove from the players map).
+      this.game.onPlayerLeave(client, consented);
+      // The seat sticks around so seat order stays stable, but if the
+      // departing player held the host badge it needs to move to someone
+      // still in the room.
+      if (this.state.hostSessionId === sessionId) {
+        this.transferHostFrom(sessionId);
       }
-      // In lobby / post-game, keep the disconnected seat visible (matches how
-      // in-game treats offline players). The current host can hand off via
-      // APPOINT_HOST if they want to clean up.
+    } else {
+      // Lobby / post-game: drop the seat entirely. removePlayer reassigns
+      // the host badge if the leaver was holding it.
+      this.removePlayer(sessionId);
     }
   }
 

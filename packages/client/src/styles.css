@@ -492,8 +492,26 @@ h1, h2, h3 {
   text-decoration: line-through;
 }
 
+.sh-player-row.disconnected {
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+
 .sh-player-row.self {
   outline: 1px solid #3d4e76;
+}
+
+.badge.kick-countdown {
+  background: #3a2a2a;
+  color: #ff9b9b;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  animation: kick-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes kick-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 155, 155, 0.0); }
+  50%      { box-shadow: 0 0 0 3px rgba(255, 155, 155, 0.25); }
 }
 
 .sh-player-name {
