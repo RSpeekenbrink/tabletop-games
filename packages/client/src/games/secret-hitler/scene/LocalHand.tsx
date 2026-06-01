@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { type RefObject } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { SHSnapshot } from "../useSHState.js";
@@ -19,6 +19,8 @@ interface Props {
   mySessionId: string;
   username: string;
   actions: SHActions;
+  /** Group ref, shared so HTML billboards can use the hand as an occluder. */
+  ref: RefObject<THREE.Group | null>;
 }
 
 /**
@@ -27,8 +29,7 @@ interface Props {
  * Role + party cards are always shown (face-up, only to this player); the
  * centre slot shows whatever the current phase asks the player to tap.
  */
-export function LocalHand({ state, mySessionId, username, actions }: Props) {
-  const ref = useRef<THREE.Group>(null);
+export function LocalHand({ state, mySessionId, username, actions, ref }: Props) {
   const { camera } = useThree();
   const priv = usePrivateInfo();
 

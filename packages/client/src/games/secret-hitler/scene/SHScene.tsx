@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef, type RefObject } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -21,6 +21,11 @@ interface Props {
 /** The full 3D Secret Hitler board. Default export so it can be React.lazy'd. */
 export default function SHScene({ state, mySessionId, username, room }: Props) {
   const actions = useSHActions(room);
+  // The local player's cards live glued to the camera in the foreground. Share
+  // their group with the HTML billboards (seat names, deck chips) so those
+  // overlays are occluded by — and never paint over — the cards in hand.
+  const handRef = useRef<THREE.Group>(null);
+  const handOccluder = handRef as RefObject<THREE.Object3D>;
 
   return (
     <Canvas
@@ -39,9 +44,15 @@ export default function SHScene({ state, mySessionId, username, room }: Props) {
       <Suspense fallback={null}>
         <Table />
         <PolicyTrackers state={state} />
-        <DeckStands state={state} />
-        <Seats state={state} mySessionId={mySessionId} actions={actions} />
+        <DeckStands state={state} occluder={handOccluder} />
+        <Seats
+          state={state}
+          mySessionId={mySessionId}
+          actions={actions}
+          occluder={handOccluder}
+        />
         <LocalHand
+          ref={handRef}
           state={state}
           mySessionId={mySessionId}
           username={username}
