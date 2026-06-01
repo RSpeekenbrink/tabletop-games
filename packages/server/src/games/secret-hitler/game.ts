@@ -260,7 +260,7 @@ export class SecretHitlerInstance implements GameInstance {
 
   private applyPassedElection(): void {
     const sh = this.state!;
-    if (sh.fascistPolicies >= 3 && this.roles.get(sh.chancellorNomineeSessionId) === "hitler") {
+    if (sh.fascistPolicies > 3 && this.roles.get(sh.chancellorNomineeSessionId) === "hitler") {
       this.endGame("fascist", "hitler-elected-chancellor");
       return;
     }
