@@ -194,11 +194,13 @@ Vite hashes and validates them at build time. See
 
 ### React UI
 
-Standard React + CSS. The platform's UI is plain 2D — no 3D scaffolding
-is wired in. The `react-three-fiber` / `three` deps are not installed;
-if your game wants a 3D scene, add them to
-`packages/client/package.json` and mount a `<Canvas>` inside your
-`GameComponent`.
+Standard React + CSS for a 2D game. For a 3D scene, `three`,
+`@react-three/fiber` and `@react-three/drei` are installed — mount a
+`<Canvas>` inside your `GameComponent` (lazy-load it with `React.lazy`
+so three.js stays out of the lobby bundle). Secret Hitler's
+`scene/` folder is a worked example: sprite-sheet textures, `.obj`
+meshes, a camera-glued hand, and tappable 3D pieces that dispatch the
+same actions the server already expects.
 
 The expected layout is a top header + content sections + a sticky-bottom
 action panel on mobile. The Secret Hitler module

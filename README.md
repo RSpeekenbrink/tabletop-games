@@ -53,7 +53,7 @@ dropping a folder into the repo, not rewriting the framework.
 
 | Layer    | Stack                                                              |
 | -------- | ------------------------------------------------------------------ |
-| Client   | React 18, Vite, TypeScript, react-three-fiber, drei, colyseus.js   |
+| Client   | React 19, Vite, TypeScript, react-three-fiber, drei, colyseus.js   |
 | Server   | Node 20, Colyseus 0.16, Express, TypeScript, ws-transport          |
 | Shared   | Colyseus `Schema` types + message constants (npm workspace)        |
 | Tooling  | npm workspaces, tsx (dev hot-reload), Docker multi-stage build     |
