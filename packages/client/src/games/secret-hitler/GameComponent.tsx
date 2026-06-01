@@ -45,12 +45,14 @@ export function SecretHitlerGame({ room }: { room: Room }) {
       </Suspense>
 
       <div className="sh3d-overlay">
-        <Header state={state} room={room} mySessionId={room.sessionId} />
-        <details className="sh3d-log">
-          <summary>Log</summary>
-          <GameLog state={state} />
-        </details>
-        <PromptStrip state={state} room={room} mySessionId={room.sessionId} />
+        <div className="sh3d-top">
+          <Header state={state} room={room} mySessionId={room.sessionId} />
+          <PromptStrip state={state} room={room} mySessionId={room.sessionId} />
+          <details className="sh3d-log">
+            <summary>Log</summary>
+            <GameLog state={state} />
+          </details>
+        </div>
       </div>
 
       {state.gamePhase === "game-over" && (
