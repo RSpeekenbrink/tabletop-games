@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import type { GameDescriptor } from "@tabletop-games/shared";
 import { MSG } from "@tabletop-games/shared";
@@ -6,6 +7,7 @@ import type { Room } from "colyseus.js";
 import { useRoomStore } from "../net/roomStore.js";
 import { useLobbyState } from "../net/useLobbyState.js";
 import { clearSession } from "../net/session.js";
+import { getClientGame } from "../games/registry.js";
 import { Avatar } from "../ui/Avatar.js";
 import logoUrl from "../assets/branding/tabletop_games.png";
 
@@ -70,43 +72,45 @@ export function Lobby() {
           <span className="shortcode">{state.shortcode}</span>
         </div>
 
-        <div className="card" style={{ minWidth: 0 }}>
-          <div className="muted">Game</div>
-          {isHost ? (
-            <select
-              value={state.selectedGameId}
-              onChange={(e) =>
-                room.send(MSG.SELECT_GAME, { gameId: e.target.value })
-              }
-            >
-              <option value="">— pick a game —</option>
-              {availableGames.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name} ({g.minPlayers}-{g.maxPlayers}p)
-                </option>
-              ))}
-            </select>
-          ) : (
-            <div>{selected ? selected.name : <span className="muted">waiting for host</span>}</div>
-          )}
+        <div className="lobby-games">
+          <div className="muted">{isHost ? "Choose a game" : "Game"}</div>
 
-          {availableGames.length === 0 && (
+          {availableGames.length === 0 ? (
             <div className="muted">No games available yet.</div>
-          )}
-
-          {selected && (
-            <div className="muted">
-              Players: {playerCount} (needs {selected.minPlayers}-{selected.maxPlayers})
+          ) : (
+            <div className="game-grid">
+              {availableGames.map((g) => (
+                <GameCard
+                  key={g.id}
+                  game={g}
+                  selected={g.id === state.selectedGameId}
+                  interactive={isHost}
+                  onSelect={() => room.send(MSG.SELECT_GAME, { gameId: g.id })}
+                />
+              ))}
             </div>
           )}
 
-          {isHost && (
-            <button
-              disabled={!canStart}
-              onClick={() => room.send(MSG.START_GAME, {})}
-            >
-              Start game
-            </button>
+          {!isHost && !selected && availableGames.length > 0 && (
+            <div className="muted">Waiting for the host to choose a game…</div>
+          )}
+
+          {selected && (
+            <div className="lobby-start">
+              <span className="muted">
+                {playerCount} {playerCount === 1 ? "player" : "players"} · needs{" "}
+                {selected.minPlayers}-{selected.maxPlayers}
+              </span>
+              {isHost && (
+                <button
+                  className="primary"
+                  disabled={!canStart}
+                  onClick={() => room.send(MSG.START_GAME, {})}
+                >
+                  Start game
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -143,6 +147,55 @@ export function Lobby() {
         })}
       </div>
     </div>
+  );
+}
+
+interface GameCardProps {
+  game: GameDescriptor;
+  selected: boolean;
+  interactive: boolean;
+  onSelect: () => void;
+}
+
+/**
+ * A single game tile in the lobby grid (Steam-library style): full-bleed
+ * background art with the title, tagline and player count overlaid. Art and
+ * styling are pulled from the client game registry; games without art fall
+ * back to a generic dark tile.
+ */
+function GameCard({ game, selected, interactive, onSelect }: GameCardProps) {
+  const card = getClientGame(game.id)?.card;
+  const style = {
+    "--card-art": card?.art ? `url(${card.art})` : undefined,
+    "--card-accent": card?.accent,
+  } as CSSProperties;
+
+  return (
+    <button
+      type="button"
+      className={`game-card${selected ? " selected" : ""}`}
+      style={style}
+      onClick={onSelect}
+      disabled={!interactive}
+      aria-pressed={selected}
+      title={game.description ?? game.name}
+    >
+      <span className="game-card-art" aria-hidden="true" />
+      {selected && (
+        <span className="game-card-check" aria-hidden="true">
+          ✓
+        </span>
+      )}
+      <span className="game-card-body">
+        <span className="game-card-title">{game.name}</span>
+        {card?.tagline && (
+          <span className="game-card-tagline">{card.tagline}</span>
+        )}
+        <span className="game-card-players">
+          {game.minPlayers}-{game.maxPlayers} players
+        </span>
+      </span>
+    </button>
   );
 }
 

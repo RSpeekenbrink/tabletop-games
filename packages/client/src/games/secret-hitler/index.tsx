@@ -10,6 +10,7 @@ import {
 import { registerClientGame } from "../registry.js";
 import { SecretHitlerGame } from "./GameComponent.js";
 import { usePrivateInfo } from "./privateInfo.js";
+import cardArt from "../../assets/games/secret-hitler/card.svg";
 // Game-scoped CSS — Vite collects this into the main bundle so we don't
 // need a separate <link> tag. Keeping SH styles next to SH code means
 // adding a new game doesn't bloat the platform's global stylesheet.
@@ -42,4 +43,9 @@ registerClientGame({
   descriptor: secretHitlerDescriptor,
   Component: SecretHitlerGame,
   setupRoomHandlers,
+  card: {
+    art: cardArt,
+    tagline: "Hidden roles. Open lies.",
+    accent: "#d4a23a",
+  },
 });
