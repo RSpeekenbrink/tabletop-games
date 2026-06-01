@@ -1,9 +1,9 @@
-import { type RefObject } from "react";
+import { useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import type { SHSnapshot } from "../useSHState.js";
 import { usePrivateInfo } from "../privateInfo.js";
-import { Card } from "./cardGeometry.js";
+import { Card, CARD_ASPECT } from "./cardGeometry.js";
 import { useCardTexture } from "./useCardTexture.js";
 import {
   roleCardCell,
@@ -46,23 +46,12 @@ export function LocalHand({ state, mySessionId, username, actions, ref }: Props)
 
   return (
     <group ref={ref}>
-      {/* Personal role + party, lower-left so they never block action cards. */}
+      {/* Personal role + party, tucked into the bottom-centre of the screen so
+          only their tops peek out; hover (desktop) or tap (mobile) to raise. */}
       {priv.role && (
         <>
-          <HandCard
-            sheet="role"
-            cell={roleCardCell(priv.role, username)}
-            width={0.44}
-            position={[-1.32, -0.92, -2.5]}
-            rotation={[0.28, 0.18, 0]}
-          />
-          <HandCard
-            sheet="party"
-            cell={partyCellForRole(priv.role)}
-            width={0.44}
-            position={[-0.84, -0.96, -2.5]}
-            rotation={[0.28, 0.12, 0]}
-          />
+          <TuckCard sheet="role" cell={roleCardCell(priv.role, username)} x={-0.32} />
+          <TuckCard sheet="party" cell={partyCellForRole(priv.role)} x={0.32} />
         </>
       )}
 
@@ -158,4 +147,84 @@ function HandCard({
 }) {
   const tex = useCardTexture(sheet, cell);
   return <Card front={tex} {...rest} />;
+}
+
+// Geometry for the tuck-away role/party cards, all camera-relative.
+const TUCK_Z = -2.5;
+const TUCK_WIDTH = 0.5;
+const TUCK_HALF = (TUCK_WIDTH * CARD_ASPECT) / 2;
+const TUCK_PEEK = 0.34; // how much of the card top stays visible when tucked
+const TUCK_MARGIN = 0.14; // gap below the card once fully raised
+const TUCK_ROT_X = 0.42; // tilted back while tucked
+const REVEAL_ROT_X = 0.12; // faces the player once raised
+
+/**
+ * A personal card (role / party) parked at the bottom-centre of the viewport.
+ * Only its top edge peeks out until the player hovers (desktop) or taps
+ * (mobile), which slides it up to full view; tapping again tucks it back.
+ * The card is glued to the camera, so its rest/raised heights are derived
+ * from the live vertical FOV at its depth — keeping it on-screen on any
+ * aspect ratio, including narrow phones.
+ */
+function TuckCard({ sheet, cell, x }: { sheet: SheetId; cell: number; x: number }) {
+  const tex = useCardTexture(sheet, cell);
+  const ref = useRef<THREE.Group>(null);
+  const camera = useThree((s) => s.camera);
+  const invalidate = useThree((s) => s.invalidate);
+  const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const shown = hovered || pinned;
+
+  // Stable initial transform so re-renders never reset our animated values.
+  const initPos = useMemo<[number, number, number]>(() => [x, -2, TUCK_Z], [x]);
+  const initRot = useMemo<[number, number, number]>(() => [TUCK_ROT_X, 0, 0], []);
+
+  useFrame((_, dt) => {
+    const g = ref.current;
+    if (!g) return;
+    const cam = camera as THREE.PerspectiveCamera;
+    const halfH = Math.abs(TUCK_Z) * Math.tan((cam.fov * Math.PI) / 360);
+    const targetY = shown
+      ? -halfH + TUCK_MARGIN + TUCK_HALF
+      : -halfH + TUCK_PEEK - TUCK_HALF;
+    const targetRotX = shown ? REVEAL_ROT_X : TUCK_ROT_X;
+    const k = Math.min(1, dt * 14); // framerate-independent ease toward target
+    g.position.y += (targetY - g.position.y) * k;
+    g.rotation.x += (targetRotX - g.rotation.x) * k;
+    if (
+      Math.abs(targetY - g.position.y) > 0.0005 ||
+      Math.abs(targetRotX - g.rotation.x) > 0.0005
+    ) {
+      invalidate(); // keep frames coming while still settling (frameloop=demand)
+    }
+  });
+
+  const setCursor = (v: string) => (document.body.style.cursor = v);
+
+  return (
+    <group
+      ref={ref}
+      position={initPos}
+      rotation={initRot}
+      onPointerOver={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
+        setHovered(true);
+        setCursor("pointer");
+        invalidate();
+      }}
+      onPointerOut={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
+        setHovered(false);
+        setCursor("auto");
+        invalidate();
+      }}
+      onClick={(e: ThreeEvent<MouseEvent>) => {
+        e.stopPropagation();
+        setPinned((p) => !p);
+        invalidate();
+      }}
+    >
+      <Card front={tex} width={TUCK_WIDTH} />
+    </group>
+  );
 }
