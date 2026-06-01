@@ -20,8 +20,8 @@ import {
   shuffle,
 } from "./rules.js";
 
-/** How long failed-vote ja/nein tokens stay revealed before the table resets. */
-const ELECTION_REVEAL_MS = 3500;
+/** How long ja/nein tokens stay revealed (pass or fail) before play continues. */
+const ELECTION_REVEAL_MS = 15000;
 
 export class SecretHitlerInstance implements GameInstance {
   private room: TabletopRoom;
@@ -245,35 +245,43 @@ export class SecretHitlerInstance implements GameInstance {
     const passed = ja > nein;
     this.log(`Vote: ${ja} Ja / ${nein} Nein → ${passed ? "PASS" : "FAIL"}.`);
 
-    if (passed) {
-      if (sh.fascistPolicies >= 3 && this.roles.get(sh.chancellorNomineeSessionId) === "hitler") {
-        this.endGame("fascist", "hitler-elected-chancellor");
-        return;
-      }
-      sh.chancellorSessionId = sh.chancellorNomineeSessionId;
-      sh.lastPresidentSessionId = sh.presidentSessionId;
-      sh.lastChancellorSessionId = sh.chancellorSessionId;
-      sh.electionTracker = 0;
-      this.startLegislativePresident();
+    // Hold the revealed ja/nein tokens on the table — pass or fail — so players
+    // can see how everyone voted, then continue with the outcome. The phase
+    // stays "election" during the wait; the guard below bails if the game was
+    // disposed or already moved on (e.g. a second resolveElection from a
+    // disconnect). (startNomination / startLegislativePresident take over the
+    // votes + votesRevealed lifecycle once play resumes.)
+    this.room.clock.setTimeout(() => {
+      if (this.state !== sh || sh.gamePhase !== "election") return;
+      if (passed) this.applyPassedElection();
+      else this.applyFailedElection();
+    }, ELECTION_REVEAL_MS);
+  }
+
+  private applyPassedElection(): void {
+    const sh = this.state!;
+    if (sh.fascistPolicies >= 3 && this.roles.get(sh.chancellorNomineeSessionId) === "hitler") {
+      this.endGame("fascist", "hitler-elected-chancellor");
       return;
     }
+    sh.chancellorSessionId = sh.chancellorNomineeSessionId;
+    sh.lastPresidentSessionId = sh.presidentSessionId;
+    sh.lastChancellorSessionId = sh.chancellorSessionId;
+    sh.electionTracker = 0;
+    this.startLegislativePresident();
+  }
 
-    // Vote failed. Hold the revealed ja/nein tokens on the table briefly so
-    // players can see how everyone voted, then reset for the consequence.
-    // (startNomination / enactPolicy clear votes + votesRevealed.)
-    this.room.clock.setTimeout(() => {
-      // Bail if the game was disposed or moved on while we waited.
-      if (this.state !== sh || sh.gamePhase !== "election") return;
-      sh.electionTracker += 1;
-      if (sh.electionTracker >= 3) {
-        this.log("Election tracker reached 3 — top policy auto-enacted.");
-        const top = this.draw(1)[0]!;
-        this.enactPolicy(top, true);
-      } else {
-        this.advancePresident();
-        this.startNomination();
-      }
-    }, ELECTION_REVEAL_MS);
+  private applyFailedElection(): void {
+    const sh = this.state!;
+    sh.electionTracker += 1;
+    if (sh.electionTracker >= 3) {
+      this.log("Election tracker reached 3 — top policy auto-enacted.");
+      const top = this.draw(1)[0]!;
+      this.enactPolicy(top, true);
+    } else {
+      this.advancePresident();
+      this.startNomination();
+    }
   }
 
   private startLegislativePresident(): void {
